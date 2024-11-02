@@ -25,8 +25,6 @@ from enum import Enum
 from collections import namedtuple
 import copy
 
-from OpenWeatherException import UnhandledLogicError, MessagePrintError
-
 FrameInfo = namedtuple('FrameInfo', ['filename', 'lineno', 'function', 'parameters'])
 
 def frame_info(walkback=0):
