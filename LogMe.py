@@ -40,15 +40,13 @@ def print_frame_info(fi):
 
 	print(message)
 	
-	
-def error_message(func_name, error):
+def error_message(frame_info_str: str, error: Exception):
 
-	return f'Exception at function: {func_name}\nError message: {error}'
+	return f'Exception => {frame_info_str} Error message: {error}'
 
-def info_message(func_name, info):
+def info_message(frame_info_str: str, info: str):
 
-	return f'Success function: {func_name}\nInfo message: {info}'
-
+	return f'Success =>{frame_info_str} Info message: {info}'
 
 class LogMe:
 
@@ -91,11 +89,12 @@ class LogMe:
 			self.logs.clear()
 		
 		except Exception as error:
-			print(error_message('LogMe.write(filename=None)', error))
-			self.logs.append(error_message('LogMe.write(filename=None)', error))
+			fi = frame_info()
+			print(error_message(print_frame_info(fi), error))
+			self.logs.append(error_message(print_frame_info(fi), error))
    
 		else:
-			print(info_message('LogMe.write(filename=None)', 'Log file is written.'))
-			self.logs.append(info_message('LogMe.write(filename=None)', 'Log file is written.'))
-  
-  
+			fi = frame_info()
+			print(info_message(print_frame_info(fi), 'Log file is written to disk.'))
+			self.logs.append(info_message(print_frame_info(fi), 'Log file is written to disk.'))
+   
