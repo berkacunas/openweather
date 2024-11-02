@@ -1,39 +1,22 @@
-'''	module info
-# Filename: LogMe
+###################################################################
+# Filename: LogMe.py
 # Extension: py
 # Version: 0.02
 # Project: LogMe
 # Description: Library module for logging
 # Creator: Berk Acunaş
 # Created on: 2023.11.07
-'''
-''' seperation of files
-	filename.xxx				created		xxxx.xx.xx		xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-	
-'''
-''' dev history
-	0.03		not under development	2023.10.28		#################
-'''
-'''	version history
-	 0.01		created		2023.11.07  	LogMe module is seperated from Services.BackupMyMySQL/backup-my-mysql.pyw code into a new file.
-	0.02		updated		2023.11.16		First version iteration done after module started to work completely properly without any error.
-'''
+###################################################################
 
 import os
 import sys
-from enum import Enum
 from collections import namedtuple
 import copy
 
 FrameInfo = namedtuple('FrameInfo', ['filename', 'lineno', 'function', 'parameters'])
 
 def frame_info(walkback=0):
-	# NOTE: sys._getframe() is a tiny bit faster than inspect.currentframe()
-	#   Although the function name is prefixed with an underscore, it is
-	#   documented and fine to use assuming we are running under CPython:
-	#
-	#   https://docs.python.org/3/library/sys.html#sys._getframe
-	#
+	
 	frame = sys._getframe().f_back
 
 	for __ in range(walkback):
@@ -45,6 +28,19 @@ def frame_info(walkback=0):
 
 	return FrameInfo(frame.f_code.co_filename, frame.f_lineno, frame.f_code.co_name, copy.deepcopy(frame.f_locals))
 
+def print_frame_info(fi):
+	
+	message = f'Filename: {fi.filename} Line no: {fi.lineno} Function: {fi.function}'
+	
+	if len(fi.parameters.items()) > 0:
+		message += " Parameters: "
+		for key, val in fi.parameters.items():
+			message += '{} = {} '.format(key, val)
+		message = message[:-1]
+
+	print(message)
+	
+	
 def error_message(func_name, error):
 
 	return f'Exception at function: {func_name}\nError message: {error}'
