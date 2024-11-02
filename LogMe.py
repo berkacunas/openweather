@@ -1,9 +1,8 @@
 ###################################################################
 # Filename: LogMe.py
-# Extension: py
 # Version: 0.02
 # Project: LogMe
-# Description: Library module for logging
+# Description: Library module for logging.
 # Creator: Berk Acunaş
 # Created on: 2023.11.07
 ###################################################################
