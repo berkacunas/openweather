@@ -9,8 +9,12 @@
 
 import os
 import sys
+from datetime import datetime
+from configparser import ConfigParser
 from collections import namedtuple
 import copy
+
+from OpenWeatherException import LoggingFileError
 
 FrameInfo = namedtuple('FrameInfo', ['filename', 'lineno', 'function', 'parameters'])
 
@@ -41,23 +45,53 @@ def print_frame_info(fi):
 	
 def error_message(frame_info_str: str, error: Exception):
 
-	return f'Exception => {frame_info_str} Error message: {error}'
+	return f'{datetime.now().strftime("%Y/%m/%d, %H:%M:%S")} Exception => {frame_info_str} Error message: {error}'
 
-def info_message(frame_info_str: str, info: str):
+def info_message(func: str, message: str):
 
-	return f'Success =>{frame_info_str} Info message: {info}'
+	return f'{datetime.now().strftime("%Y/%m/%d, %H:%M:%S")} Success => Func: {func}   Info Message: {message}'
 
 class LogMe:
 
-	def __init__(self, log_dir, filename_without_ext, ext='log') -> None:
+	def __init__(self):
 
 		self.logs = []
-		self.log_dir = log_dir
-		self.filename_without_ext = filename_without_ext
-		self.ext = ext
-		self.log_filename = os.path.join(self.log_dir, f'{self.filename_without_ext}.{self.ext}') 
 
-	def write(self, filename=None):
+		config = ConfigParser()
+		config.read('serviceconfig.ini')
+
+		self.log_dir = config.get('Directories', 'LogDirectory')
+		self.filename = f'{datetime.now().strftime("%Y.%m.%d")}_openweather.log'	# %Y.%m.%d %H%M%S
+		self.logfile = os.path.join(self.log_dir, self.filename) 
+
+	def write(self, message):
+
+		try:
+			log_text = ''
+			
+			mode = None
+			if os.path.exists(self.logfile):
+				mode = 'a'
+			else:
+				mode = 'w'
+				f = open(self.logfile, 'x')
+				f.close()
+			
+			newline = ''
+			with open(self.logfile, mode) as f:
+				if f.tell() != 0:
+					newline = '\n'
+
+				f.write(message)
+				f.write('\n')
+				# f.write('*' * 120)
+		
+		except Exception as error:
+			raise LoggingFileError(error)
+		else:
+			print(info_message('LogMe::write()', 'Log file is written to disk.'))
+
+	def write_collection(self, filename=None):
 	
 		if len(self.logs) == 0:
 			return
@@ -66,15 +100,15 @@ class LogMe:
 			log_text = ''
 			
 			mode = None
-			if os.path.exists(self.log_filename):
+			if os.path.exists(self.logfile):
 				mode = 'a'
 			else:
 				mode = 'w'
-				f = open(self.log_filename, 'x')
+				f = open(self.logfile, 'x')
 				f.close()
 			
 			newline = ''
-			with open(self.log_filename, mode) as f:
+			with open(self.logfile, mode) as f:
 				if f.tell() != 0:
 					newline = '\n'
 
@@ -83,17 +117,14 @@ class LogMe:
 					f.write(log_text)
 
 				f.write('\n')
-				f.write('*' * 120)
+				# f.write('*' * 120)
 				
 			self.logs.clear()
 		
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logs.append(error_message(print_frame_info(fi), error))
+			raise LoggingFileError(error)
    
 		else:
 			fi = frame_info()
-			print(info_message(print_frame_info(fi), 'Log file is written to disk.'))
-			self.logs.append(info_message(print_frame_info(fi), 'Log file is written to disk.'))
+			print(info_message('LogMe::write()', 'Log file list is written to disk.'))
    

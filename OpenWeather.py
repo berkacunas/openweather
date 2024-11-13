@@ -1,0 +1,115 @@
+'''	module info
+# Filename: openweather41
+# Extension: pyw
+# Version: 0.04.1
+# Project: OpenWeather
+# Description: Project's main file
+# Creator: Berk Acunaş
+# Created on: 2023.05.04
+'''
+
+from datetime import datetime
+import math
+
+from City import City
+from LogMe import error_message
+from ServiceOptions import ServiceOptions
+
+def main():
+
+	# options = GlobalServiceOptions()
+	# ows = OpenWeatherServer(options.config.API_KEY)
+	# jsonFile = JsonFile(options)
+	
+	start_time = datetime.now()
+	print(f'Started at {start_time}')
+
+	cities = None
+	
+	try:
+
+		i = 0
+		k = 0
+		index = 0
+
+		initilizer = ServiceOptions()
+		city = City()
+		cities = city.get_all_names()
+		'''
+		query_count = math.floor(len(cities) /  options.MAX_GROUP_QUERY_LIMIT) + 1
+		
+		rows_mysql = []
+
+		openweather_id_list = []
+		query_token = ''
+
+		for i in range(query_count):
+			
+			for k in range(options.MAX_GROUP_QUERY_LIMIT):
+				if index == len(cities):
+					break
+
+				openweather_id_list.append(str(cities[index].city.openweather_id))
+				index += 1
+
+			if len(openweather_id_list) > 0:
+				query_token = ''
+				query_token = ','.join(openweather_id_list)[:-1]
+				response, query_string, NOW = ows.get_responses(query_token)
+				datalist = response.json()
+
+				jsonFile.save_data(datalist)
+
+				
+				loggerMySQL.init_query_time(datalist, query_string, NOW)
+				loggerMySQL.insert()
+				loggerMySQL.get_id(loggerMySQL.dt, loggerMySQL.query_time)
+
+				for data in datalist['list']:
+					try:
+						weatherDataMySQL = WeatherDataMySQL(options)
+						weatherDataMySQL.wd.parse(data, kelvin_to_celcius=True)
+						weatherDataMySQL.query_id = loggerMySQL_id
+
+						if not weatherDataMySQL.is_dt_exists():
+							rows_mysql.append(weatherDataMySQL.to_list())
+
+					except Exception as error:
+						print(error_message('main() => weatherDataMySQL.parse(data, kelvin_to_celcius=True)', error))
+						log_list.append(error_message('main() => weatherDataMySQL.parse(data, kelvin_to_celcius=True)', error))
+
+				openweather_id_list.clear()
+				k = 0
+
+		try:
+			if len(rows_mysql) > 0:
+				weatherDataMySQL.insertmany(rows_mysql)
+
+				mysql_log = f'New MySQL Records          --->    {len(rows_mysql)}'
+				print(mysql_log)
+				log_list.append(mysql_log)
+
+		except Exception as mysql_error:
+			print(f'Error at weatherDataMySQL.insertmany(rows) -> int : {mysql_error}')
+			
+
+		end_time = datetime.now()
+
+		query_duration = end_time - start_time
+		query_log = f'Query completed successfully in {query_duration} '
+		print(query_log)
+		log_list.append(query_log)
+'''
+	except Exception as error:
+		print(error_message('main()', error))
+		# log_list.append(error_message('main()', error))
+		pass
+	
+	finally:
+		pass
+		# if options.config.log_on:
+		# 	log_list_to_file(options)
+
+
+if __name__ == "__main__":
+	main()

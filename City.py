@@ -1,49 +1,50 @@
 #####################################################################################################################
 #																													#
-# Filename: City.py																									#
-# Version: 0.4.3																									#
-# Project: OpenWeather																								#
-# Description: SQL operations for City object.																		#
-# Creator: Berk Acunaş																								#
-# Created on: 2022.06.07																							#
+# Filename: 	City.py																								#
+# Version: 		0.4.3																								#
+# Project: 		OpenWeather																							#
+# Description: 	SQL operations for City object.																		#
+# Creator: 		Berk Acunaş																							#
+# Created on: 	2022.06.07																							#
+# Last update: 	2024.11.13																							#
 #																													#
 #																													#
 # Class City																										#
-# 	Methods:																										#
 # 		- copy(self, other)																							#
 #																													#
 #																													#
 # Class CityCRUD																									#
-# 	Methods:																										#
 #	private:																										#
 #		- load_tuple(item) -> City																					#
+#																													#
 # 	public:																											#
-#		- select(self) -> City																						#
-#		- select_id(self, city_name) -> int																			#
+#		- select(self, id) -> City																					#
+#		- select_id_by_name(self, city_name) -> int																	#
+#		- select_all(self) -> list													@staticmethod-like				#
+#		- select_name_by_id(self, city_id: int) -> str								@staticmethod-like				#
+#		- select_all_names(self) -> list											@staticmethod-like				#
 #		- insert(self, city: City)																					#
 #		- update(self, id: int, city: City)																			#
 #		- delete(self, id)																							#
 #		- is_exists(self, openweather_id) -> bool									@staticmethod-like				#
-#		- get_all(self) -> list														@staticmethod-like				#
-#		- get_name_by_id(self, city_id: int) -> str									@staticmethod-like				#
-#		- get_names(self) -> list													@staticmethod-like				#
-#		- get_id_by_openweather_id(self, openweather_id: int) -> int				@staticmethod-like				#
-#		- get_country_by_country_code(self, country_code: str) -> str				@staticmethod-like				#
-#		- get_countries(self) -> dict												@staticmethod-like				#
-#		- get_timezone(self, id: int) -> int										@staticmethod-like				#
-#		- get_openweather_id_by_name(self, name: str) -> int						@staticmethod-like				#
+#																													#
+#		- select_country_by_country_code(self, country_code: str) -> str			@staticmethod-like				#
+#		- select_countries(self) -> dict											@staticmethod-like				#
+#																													#
+#		- select_timezone(self, id: int) -> int										@staticmethod-like				#
 #		- insert_timezone_if_not_exists(self, openweather_id: int, timezone: int)	@staticmethod-like				#
+#																													#
+#		- select_id_by_openweather_id(self, openweather_id: int) -> int				@staticmethod-like				#
+#		- select_openweather_id_by_name(self, name: str) -> int						@staticmethod-like				#
 #		- update_openweather_id_by_id(self, openweather_id: int, id: int)			@staticmethod-like				#
 #																													#
 #####################################################################################################################
 
+import json
 from ICRUD import CRUD
-from GlobalServiceOptions import GlobalServiceOptions
-from LogMe import info_message, error_message, frame_info, print_frame_info
+from MySQLConnection import DBConnection
+from LogMe import LogMe, info_message, error_message, frame_info, print_frame_info
 from OpenWeatherException import TupleLoadingError, TimezoneError
-
-class CityNotFoundError(Exception):
-	pass
 
 class City():
 
@@ -59,6 +60,7 @@ class City():
 		self.state = None
   
 		self.crud = CityCRUD()
+		self.logMe = LogMe()
   
 	def copy(self, other):
 		'''Copy other object to self object'''
@@ -76,19 +78,47 @@ class City():
 		except Exception as error:
 			fi = frame_info()
 			print(error_message(print_frame_info(fi), error))
-			self.options.logMe.logs.append(error_message(print_frame_info(fi), error))
+			self.logMe.write(error_message(print_frame_info(fi), error))
    
 		else:
 			fi = frame_info()
 			print(info_message(print_frame_info(fi), 'Other copied.'))
-			self.options.logMe.logs.append(info_message(print_frame_info(fi), 'Other copied.'))
+			self.logMe.write(info_message(print_frame_info(fi), 'Other copied.'))
 
-class CityCRUD(CRUD):
+	def load(self, id):
+
+		self.copy(self.crud.select(id))
+
+	def get_id_by_name(self, name) -> int:
+
+		return self.crud.select_id_by_name(name)
+	
+	def get_name_by_id(self, id) -> str:
+
+		return self.crud.select_name_by_id(id)
+
+	def get_all(self) -> list:
+
+		return self.crud.get_all()
+
+	def get_all_names(self) -> list:
+
+		return self.crud.select_all_names()
+
+	def add(self):
+		
+		self.crud.insert(self)
+
+	def remove(self):
+
+		self.crud.delete(self.id)
+
+class CityCRUD():
 
 	def __init__(self):
 		
-		self.options = GlobalServiceOptions()
-		self.id = None
+		self.dbConn = DBConnection()
+		self.logMe = LogMe()
 		
 	@staticmethod
 	def load_tuple(item) -> City:
@@ -114,14 +144,14 @@ class CityCRUD(CRUD):
 		except Exception as error:
 			raise TupleLoadingError(error)
 	
-	def select(self) -> City:
+	def select(self, id) -> City:
 		
 		try:
-			conn = self.options.db_Conn.createMySQLConnection()
+			conn = self.dbConn.createMySQLConnection()
 			cur = conn.cursor()
 
 			sql = "SELECT id, name, longitude, latitude, country_code, timezone, openweather_id, state FROM city WHERE id = %s"
-			cur.execute(sql, (self.id, ))
+			cur.execute(sql, (id, ))
 			row = cur.fetchone()
 			
 			city = None
@@ -130,28 +160,30 @@ class CityCRUD(CRUD):
 	
 				fi = frame_info()
 				print(info_message(print_frame_info(fi), 'City selected.'))
-				self.options.logMe.logs.append(info_message(print_frame_info(fi), 'City selected.'))
+				self.logMe.write(info_message(print_frame_info(fi), 'City selected.'))
 	
 			return city
 
 		except Exception as error:
 			fi = frame_info()
 			print(error_message(print_frame_info(fi), error))
-			self.options.logMe.logs.append(error_message(print_frame_info(fi), error))
+			self.logMe.write(error_message(print_frame_info(fi), error))
 		
 		finally:
 			if conn:
 				conn.close()
 
-	def select_id(self, city_name) -> int:
+	def select_id_by_name(self, city_name) -> int:
 		'''If city exists, returns city id from City table.
   		If  city doesn't exist, returns -1.'''
 
 		try:
-			if city_name in self.options.config.city_names_json_db_diff.keys():
-				city_name = self.options.config.city_names_json_db_diff[city_name]
+			with open('citydiff.json', 'r') as f:
+				data = json.load(f)
+				if city_name in data.keys():
+					city_name = data[city_name]
 
-			conn = self.options.db_Conn.createMySQLConnection()
+			conn = self.dbConn.createMySQLConnection()
 			cur = conn.cursor()
 
 			sql = "SELECT id FROM city WHERE name = %s"
@@ -161,7 +193,7 @@ class CityCRUD(CRUD):
 			if row:
 				fi = frame_info()
 				print(info_message(print_frame_info(fi), 'City id is got.'))
-				self.options.logMe.logs.append(info_message(print_frame_info(fi), 'City id is got.'))
+				self.logMe.write(info_message(print_frame_info(fi), 'City id is got.'))
    
 				return int(row[0])
 
@@ -170,140 +202,46 @@ class CityCRUD(CRUD):
 		except Exception as error:
 			fi = frame_info()
 			print(error_message(print_frame_info(fi), error))
-			self.options.logMe.logs.append(error_message(print_frame_info(fi), error))
+			self.logMe.write(error_message(print_frame_info(fi), error))
 		
 		finally:
 			if conn:
 				conn.close()
 
-	def insert(self, city: City):
-		# inserts into MySQL database
-		conn = None
+	def select_name_by_id(self, id: int) -> str:
 
 		try:
-			if not self.is_exists(self):
-
-				conn = self.options.db_Conn.createMySQLConnection()
-				cur = conn.cursor()
-				sql = 'INSERT INTO City(name, longitude, latitude, country_code, timezone, openweather_id, state) VALUES(%s, %s, %s, %s, %s, %s, %s)'
-
-				cur.execute(sql, (city.name, city.longitude, city.latitude, city.country_code, city.timezone, city.openweather_id, city.state))
-
-				cur.close()
-				conn.commit()
-			
-		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.options.logMe.logs.append(error_message(print_frame_info(fi), error))
-   
-		else:
-			fi = frame_info()
-			print(info_message(print_frame_info(fi), 'City inserted.'))
-			self.options.logMe.logs.append(info_message(print_frame_info(fi), 'City inserted.'))
-		
-		finally:
-			if conn:
-				conn.close()
-
-	def update(self, id: int, city: City):
-
-		conn = None
-		try:
-			
-			if not self.is_exists(self):
-
-				conn = self.options.db_Conn.createMySQLConnection()
-				cur = conn.cursor()
-
-				sql = ''' UPDATE City SET name = %s, longitude = %s, latitude = %s, country_code = %s, timezone = %s, 
-							openweather_id = %s, state = %s WHERE id = %s; '''
-
-				cur.execute(sql, (city.name, city.longitude, city.latitude, city.country_code, city.timezone, city.openweather_id, city.state, id))
-
-				cur.close()
-				conn.commit()
-			
-		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.options.logMe.logs.append(error_message(print_frame_info(fi), error))
-   
-		else:
-			fi = frame_info()
-			print(info_message(print_frame_info(fi), 'City updated.'))
-			self.options.logMe.logs.append(info_message(print_frame_info(fi), 'City updated.'))
-		
-		finally:
-			if conn:
-				conn.close()
-
-	def delete(self, id):
-		
-		conn = None
-		try:
-			
-			if not self.is_exists(self):
-
-				conn = self.options.db_Conn.createMySQLConnection()
-				cur = conn.cursor()
-				sql = ''' DELETE FROM city WHERE id = %s; '''
-
-				cur.execute(sql, (id, ))
-
-				cur.close()
-				conn.commit()
-			
-		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.options.logMe.logs.append(error_message(print_frame_info(fi), error))
-   
-		else:
-			fi = frame_info()
-			print(info_message(print_frame_info(fi), 'City deleted.'))
-			self.options.logMe.logs.append(info_message(print_frame_info(fi), 'City deleted.'))
-		
-		finally:
-			if conn:
-				conn.close()
-
-	def is_exists(self, openweather_id) -> bool:
-		'''Cannot query by name because there are more than one city with same name. 
-  		Use openweather id for query as a unique identifier.'''
-
-		try:
-			conn = self.options.db_Conn.createMySQLConnection()
+			conn = self.dbConn.createMySQLConnection()
 			cur = conn.cursor()
 
-			sql = 'SELECT COUNT(id) FROM city WHERE openweather_id = %s'
-			cur.execute(sql, (openweather_id, ))
+			sql = "SELECT name FROM city WHERE id = %s"
+			cur.execute(sql, (id, ))
 			row = cur.fetchone()
 
 			fi = frame_info()
-			print(info_message(print_frame_info(fi), 'Is city exists checked.'))
-			self.options.logMe.logs.append(info_message(print_frame_info(fi), 'Is city exists checked.'))
-   
-			if row:
-				return int(row[0]) > 0
+			print(info_message(print_frame_info(fi), 'City name is got.'))
+			self.logMe.write(info_message(print_frame_info(fi), 'City name is got.'))
 
-			return -1
+			if row:
+				return str(row[0])
+
+			return None
 			
 		except Exception as error:
 			fi = frame_info()
 			print(error_message(print_frame_info(fi), error))
-			self.options.logMe.logs.append(error_message(print_frame_info(fi), error))
-   
+			self.logMe.write(error_message(print_frame_info(fi), error))
+		
 		finally:
 			if conn:
 				conn.close()
-
-	def get_all(self) -> list:
+	
+	def select_all(self) -> list:
 		
 		cities = []
 
 		try:
-			conn = self.options.db_Conn.createMySQLConnection()
+			conn = self.dbConn.createMySQLConnection()
 			cur = conn.cursor()
 
 			sql = "SELECT id, name, longitude, latitude, country_code, timezone, openweather_id, state FROM city"
@@ -314,55 +252,27 @@ class CityCRUD(CRUD):
 				for row in rows:
 					city = CityCRUD.load_tuple(row)
 					cities.append(city)
-     
+	 
 				fi = frame_info()
 				print(info_message(print_frame_info(fi), 'All cities are got.'))
-				self.options.logMe.logs.append(info_message(print_frame_info(fi), 'All cities are got.'))
+				self.logMe.write(info_message(print_frame_info(fi), 'All cities are got.'))
 
 			return cities
 			
 		except Exception as error:
 			fi = frame_info()
 			print(error_message(print_frame_info(fi), error))
-			self.options.logMe.logs.append(error_message(print_frame_info(fi), error))
+			self.logMe.write(error_message(print_frame_info(fi), error))
 		
 		finally:
 			if conn:
 				conn.close()
-	
-	def get_name_by_id(self, id: int) -> str:
 
-		try:
-			conn = self.options.db_Conn.createMySQLConnection()
-			cur = conn.cursor()
-
-			sql = "SELECT name FROM city WHERE id = %s"
-			cur.execute(sql, (id, ))
-			row = cur.fetchone()
-
-			fi = frame_info()
-			print(info_message(print_frame_info(fi), 'City name is got.'))
-			self.options.logMe.logs.append(info_message(print_frame_info(fi), 'City name is got.'))
-
-			if row:
-				return str(row[0])
-
-			return None
-			
-		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.options.logMe.logs.append(error_message(print_frame_info(fi), error))
-		
-		finally:
-			if conn:
-				conn.close()
-		
-	def get_names(self) -> list:
+	def select_all_names(self) -> list:
 		
 		cities = []
 		try:
-			conn = self.options.db_Conn.createMySQLConnection()
+			conn = self.dbConn.createMySQLConnection()
 			curr = conn.cursor()
 
 			sql = "SELECT name FROM city"
@@ -377,51 +287,148 @@ class CityCRUD(CRUD):
 			curr.close()
 			conn.commit()
    
-			fi = frame_info()
-			print(info_message(print_frame_info(fi), 'All city names are got.'))
-			self.options.logMe.logs.append(info_message(print_frame_info(fi), 'All city names are got.'))
+			print(info_message('CityCRUD::select_all_names()', 'All city names are got.'))
+			self.logMe.write(info_message('CityCRUD::select_all_names()', 'All city names are got.'))
 
 			return cities
 		
 		except Exception as error:
 			fi = frame_info()
 			print(error_message(print_frame_info(fi), error))
-			self.options.logMe.logs.append(error_message(print_frame_info(fi), error))
+			self.logMe.write(error_message(print_frame_info(fi), error))
 			
 		finally:
 			if conn:
 				conn.close()
 
-	def get_id_by_openweather_id(self, openweather_id: int) -> int:
+	def insert(self, city: City):
+		# inserts into MySQL database
+		conn = None
 
 		try:
-			conn = self.options.db_Conn.createMySQLConnection()
-			cur = conn.cursor()
+			if not self.is_exists(self):
 
-			sql = "SELECT id FROM city WHERE openweather_id = %s"
-			cur.execute(sql, (openweather_id, ))
-			row = cur.fetchone()
+				conn = self.dbConn.createMySQLConnection()
+				cur = conn.cursor()
+				sql = 'INSERT INTO City(name, longitude, latitude, country_code, timezone, openweather_id, state) VALUES(%s, %s, %s, %s, %s, %s, %s)'
 
-			fi = frame_info()
-			print(info_message(print_frame_info(fi), 'City id is got by openweather id.'))
-			self.options.logMe.logs.append(info_message(print_frame_info(fi), 'City id is got by openweather id.'))
+				cur.execute(sql, (city.name, city.longitude, city.latitude, city.country_code, city.timezone, city.openweather_id, city.state))
 
-			return str(row[0])
-
+				cur.close()
+				conn.commit()
+			
 		except Exception as error:
 			fi = frame_info()
 			print(error_message(print_frame_info(fi), error))
-			self.options.logMe.logs.append(error_message(print_frame_info(fi), error))
-
+			self.logMe.write(error_message(print_frame_info(fi), error))
+   
+		else:
+			fi = frame_info()
+			print(info_message(print_frame_info(fi), 'City inserted.'))
+			self.logMe.write(info_message(print_frame_info(fi), 'City inserted.'))
+		
 		finally:
 			if conn:
 				conn.close()
 
-	def get_country_by_country_code(self, country_code: str) -> str:
+	def update(self, id: int, city: City):
+
+		conn = None
+		try:
+			
+			if not self.is_exists(self):
+
+				conn = self.dbConn.createMySQLConnection()
+				cur = conn.cursor()
+
+				sql = ''' UPDATE City SET name = %s, longitude = %s, latitude = %s, country_code = %s, timezone = %s, 
+							openweather_id = %s, state = %s WHERE id = %s; '''
+
+				cur.execute(sql, (city.name, city.longitude, city.latitude, city.country_code, city.timezone, city.openweather_id, city.state, id))
+
+				cur.close()
+				conn.commit()
+			
+		except Exception as error:
+			fi = frame_info()
+			print(error_message(print_frame_info(fi), error))
+			self.logMe.write(error_message(print_frame_info(fi), error))
+   
+		else:
+			fi = frame_info()
+			print(info_message(print_frame_info(fi), 'City updated.'))
+			self.logMe.write(info_message(print_frame_info(fi), 'City updated.'))
+		
+		finally:
+			if conn:
+				conn.close()
+
+	def delete(self, id):
+		
+		conn = None
+		try:
+			
+			if not self.is_exists(self):
+
+				conn = self.dbConn.createMySQLConnection()
+				cur = conn.cursor()
+				sql = ''' DELETE FROM city WHERE id = %s; '''
+
+				cur.execute(sql, (id, ))
+
+				cur.close()
+				conn.commit()
+			
+		except Exception as error:
+			fi = frame_info()
+			print(error_message(print_frame_info(fi), error))
+			self.logMe.write(error_message(print_frame_info(fi), error))
+   
+		else:
+			fi = frame_info()
+			print(info_message(print_frame_info(fi), 'City deleted.'))
+			self.logMe.write(info_message(print_frame_info(fi), 'City deleted.'))
+		
+		finally:
+			if conn:
+				conn.close()
+
+	def is_exists(self, openweather_id) -> bool:
+		'''Cannot query by name because there are more than one city with same name. 
+  		Use openweather id for query as a unique identifier.'''
+
+		try:
+			conn = self.dbConn.createMySQLConnection()
+			cur = conn.cursor()
+
+			sql = 'SELECT COUNT(id) FROM city WHERE openweather_id = %s'
+			cur.execute(sql, (openweather_id, ))
+			row = cur.fetchone()
+
+			fi = frame_info()
+			print(info_message(print_frame_info(fi), 'Is city exists checked.'))
+			self.logMe.write(info_message(print_frame_info(fi), 'Is city exists checked.'))
+   
+			if row:
+				return int(row[0]) > 0
+
+			return -1
+			
+		except Exception as error:
+			fi = frame_info()
+			print(error_message(print_frame_info(fi), error))
+			self.logMe.write(error_message(print_frame_info(fi), error))
+   
+		finally:
+			if conn:
+				conn.close()
+	
+	
+	def select_country_by_country_code(self, country_code: str) -> str:
 		# Returns the name of country queried by its country code as str
 
 		try:
-			conn = self.options.db_Conn.createMySQLConnection()
+			conn = self.dbConn.createMySQLConnection()
 			cur = conn.cursor()
 
 			sql = "SELECT country FROM country_code WHERE alpha2_code = ?"
@@ -430,7 +437,7 @@ class CityCRUD(CRUD):
    
 			fi = frame_info()
 			print(info_message(print_frame_info(fi), 'Country name is got by country code.'))
-			self.options.logMe.logs.append(info_message(print_frame_info(fi), 'Country name is got by country code.'))
+			self.logMe.write(info_message(print_frame_info(fi), 'Country name is got by country code.'))
    
 			if row:
 				return str(row[0])
@@ -440,18 +447,18 @@ class CityCRUD(CRUD):
 		except Exception as error:
 			fi = frame_info()
 			print(error_message(print_frame_info(fi), error))
-			self.options.logMe.logs.append(error_message(print_frame_info(fi), error))
+			self.logMe.write(error_message(print_frame_info(fi), error))
 		
 		finally:
 			if conn:
 				conn.close()
 
-	def get_countries(self) -> dict:
+	def select_countries(self) -> dict:
 		'''Returns all countries and their associated country codes in a dict.'''
 		countryDict = {}
 
 		try:
-			conn = self.options.db_Conn.createMySQLConnection()
+			conn = self.dbConn.createMySQLConnection()
 			cur = conn.cursor()
 
 			sql = "SELECT country, alpha2_code FROM country_code"
@@ -463,23 +470,24 @@ class CityCRUD(CRUD):
 				
 				fi = frame_info()
 				print(info_message(print_frame_info(fi), 'All countries are got into a dictionary.'))
-				self.options.logMe.logs.append(info_message(print_frame_info(fi), 'All countries are got into a dictionary.'))
+				self.logMe.write(info_message(print_frame_info(fi), 'All countries are got into a dictionary.'))
    
 			return countryDict
 				
 		except Exception as error:
 			fi = frame_info()
 			print(error_message(print_frame_info(fi), error))
-			self.options.logMe.logs.append(error_message(print_frame_info(fi), error))
+			self.logMe.write(error_message(print_frame_info(fi), error))
 		
 		finally:
 			if conn:
 				conn.close()
 
-	def get_timezone(self, id: int) -> int:
+
+	def select_timezone(self, id: int) -> int:
 		'''Returns timezone of city in integer format'''
 		try:
-			conn = self.options.db_Conn.createMySQLConnection()
+			conn = self.dbConn.createMySQLConnection()
 			cur = conn.cursor()
 
 			sql = "SELECT timezone FROM city WHERE id = %s"
@@ -490,7 +498,7 @@ class CityCRUD(CRUD):
 			if row:
 				fi = frame_info()
 				print(info_message(print_frame_info(fi), 'City timezone is got.'))
-				self.options.logMe.logs.append(info_message(print_frame_info(fi), 'City timezone is got.'))
+				self.logMe.write(info_message(print_frame_info(fi), 'City timezone is got.'))
 	   
 				timezone = int(row[0])
 				timezone = timezone / 3600
@@ -501,7 +509,7 @@ class CityCRUD(CRUD):
 		except Exception as error:
 			fi = frame_info()
 			print(error_message(print_frame_info(fi), error))
-			self.options.logMe.logs.append(error_message(print_frame_info(fi), error))
+			self.logMe.write(error_message(print_frame_info(fi), error))
 		
 		finally:
 			if conn:
@@ -510,7 +518,7 @@ class CityCRUD(CRUD):
 	def insert_timezone_if_not_exists(self, openweather_id: int, timezone: int):
 
 		try:
-			conn = self.options.db_Conn.createMySQLConnection()
+			conn = self.dbConn.createMySQLConnection()
 			cur = conn.cursor()
 
 			sql = "SELECT COUNT(timezone) FROM city WHERE openweather_id = %s"
@@ -530,21 +538,72 @@ class CityCRUD(CRUD):
 		except Exception as error:
 			fi = frame_info()
 			print(error_message(print_frame_info(fi), error))
-			self.options.logMe.logs.append(error_message(print_frame_info(fi), error))
+			self.logMe.write(error_message(print_frame_info(fi), error))
    
 		else:
 			fi = frame_info()
 			print(info_message(print_frame_info(fi), 'Timezone is inserted if not existed before.'))
-			self.options.logMe.logs.append(info_message(print_frame_info(fi), 'Timezone is inserted if not existed before.'))
+			self.logMe.write(info_message(print_frame_info(fi), 'Timezone is inserted if not existed before.'))
 	  
 		finally:
 			if conn:
 				conn.close()
 
-	def get_openweather_id_by_name(self, name: str) -> int:
+
+	def select_id_by_openweather_id(self, openweather_id: int) -> int:
 
 		try:
-			conn = self.options.db_Conn.createMySQLConnection()
+			conn = self.dbConn.createMySQLConnection()
+			cur = conn.cursor()
+
+			sql = "SELECT id FROM city WHERE openweather_id = %s"
+			cur.execute(sql, (openweather_id, ))
+			row = cur.fetchone()
+
+			fi = frame_info()
+			print(info_message(print_frame_info(fi), 'City id is got by openweather id.'))
+			self.logMe.write(info_message(print_frame_info(fi), 'City id is got by openweather id.'))
+
+			return str(row[0])
+
+		except Exception as error:
+			fi = frame_info()
+			print(error_message(print_frame_info(fi), error))
+			self.logMe.write(error_message(print_frame_info(fi), error))
+
+		finally:
+			if conn:
+				conn.close()
+
+	def select_openweather_id_by_id(self, id: int) -> int:
+
+		try:
+			conn = self.dbConn.createMySQLConnection()
+			cur = conn.cursor()
+
+			sql = "SELECT openweather_id FROM city WHERE id = %s"
+			cur.execute(sql, (id, ))
+			row = cur.fetchone()
+
+			fi = frame_info()
+			print(info_message(print_frame_info(fi), 'City openweather id is got by id.'))
+			self.logMe.write(info_message(print_frame_info(fi), 'City openweather id is got by id.'))
+
+			return str(row[0])
+
+		except Exception as error:
+			fi = frame_info()
+			print(error_message(print_frame_info(fi), error))
+			self.logMe.write(error_message(print_frame_info(fi), error))
+
+		finally:
+			if conn:
+				conn.close()
+
+	def select_openweather_id_by_name(self, name: str) -> int:
+
+		try:
+			conn = self.dbConn.createMySQLConnection()
 			cur = conn.cursor()
 
 			sql = "SELECT openweather_id FROM city WHERE name = %s"
@@ -553,14 +612,14 @@ class CityCRUD(CRUD):
 
 			fi = frame_info()
 			print(info_message(print_frame_info(fi), 'openweather id is got.'))
-			self.options.logMe.logs.append(info_message(print_frame_info(fi), 'openweather id is got.'))
+			self.logMe.write(info_message(print_frame_info(fi), 'openweather id is got.'))
 
 			return int(row[0])
 			
 		except Exception as error:
 			fi = frame_info()
 			print(error_message(print_frame_info(fi), error))
-			self.options.logMe.logs.append(error_message(print_frame_info(fi), error))
+			self.logMe.write(error_message(print_frame_info(fi), error))
 		
 		finally:
 			if conn:
@@ -569,7 +628,7 @@ class CityCRUD(CRUD):
 	def update_openweather_id_by_id(self, openweather_id: int, id: int):
 
 		try:
-			conn = self.options.db_Conn.createMySQLConnection()
+			conn = self.dbConn.createMySQLConnection()
 			cur = conn.cursor()
 
 			sql = 'UPDATE City SET openweather_id = %s WHERE id = %s'
@@ -582,13 +641,14 @@ class CityCRUD(CRUD):
 		except Exception as error:
 			fi = frame_info()
 			print(error_message(print_frame_info(fi), error))
-			self.options.logMe.logs.append(error_message(print_frame_info(fi), error))
+			self.logMe.write(error_message(print_frame_info(fi), error))
 		
 		else:
 			fi = frame_info()
 			print(info_message(print_frame_info(fi), 'openweather id is updated.'))
-			self.options.logMe.logs.append(info_message(print_frame_info(fi), 'openweather id is updated.'))
+			self.logMe.write(info_message(print_frame_info(fi), 'openweather id is updated.'))
   
 		finally:
 			if conn:
 				conn.close()
+
