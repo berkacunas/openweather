@@ -33,4 +33,9 @@ class LoggingFileError(Exception):
 	   
 		super().__init__(message)
 		self.errors = errors
-		
+
+class OpenWeatherLoggerNotMarkedError(Exception):
+	def __init__(self, message, errors):     
+	   
+		super().__init__(message)
+		self.errors = errors

@@ -13,6 +13,7 @@ from configparser import ConfigParser
 import math
 
 from OpenWeatherServer import OpenWeatherServer
+from OpenWeatherLogger import OpenWeatherLogger
 from City import City
 from LogMe import error_message
 from Initializer import Initializer
@@ -65,12 +66,12 @@ def main():
 				openweatherdata = ows.get_group_openweatherdata(query_token)
 				datalist = openweatherdata.json
 				
-				
+				first_data_dt = int(datalist['list'][0]["dt"])
 
-				
-				# loggerMySQL.init_query_time(datalist, query_string, NOW)
-				# loggerMySQL.insert()
-				# loggerMySQL.get_id(loggerMySQL.dt, loggerMySQL.query_time)
+				logger = OpenWeatherLogger()
+				logger.mark(first_data_dt, openweatherdata.url, openweatherdata.query_time)
+				logger.add()
+
 
 				for data in datalist['list']:
 					try:

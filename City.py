@@ -41,7 +41,6 @@
 #####################################################################################################################
 
 import json
-from ICRUD import CRUD
 from MySQLConnection import DBConnection
 from LogMe import LogMe, info_message, error_message, frame_info, print_frame_info
 from OpenWeatherException import TupleLoadingError, TimezoneError
