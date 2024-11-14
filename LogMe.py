@@ -125,6 +125,5 @@ class LogMe:
 			raise LoggingFileError(error)
    
 		else:
-			fi = frame_info()
-			print(info_message('LogMe::write()', 'Log file list is written to disk.'))
+			print(info_message('LogMe::write_collection()', 'Log file list is written to disk.'))
    

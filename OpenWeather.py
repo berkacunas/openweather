@@ -63,10 +63,9 @@ def main():
 				query_token = ','.join(openweather_ids)[:-1]
 
 				openweatherdata = ows.get_group_openweatherdata(query_token)
-				# response, query_string, NOW = ows.get_responses(query_token)
-				# datalist = response.json()
-
-				# jsonFile.save_data(datalist)
+				datalist = openweatherdata.json
+				
+				
 
 				
 				# loggerMySQL.init_query_time(datalist, query_string, NOW)
