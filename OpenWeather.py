@@ -9,18 +9,15 @@
 '''
 
 from datetime import datetime
+from configparser import ConfigParser
 import math
 
 from City import City
 from LogMe import error_message
-from ServiceOptions import ServiceOptions
+from Initializer import Initializer
 
 def main():
 
-	# options = GlobalServiceOptions()
-	# ows = OpenWeatherServer(options.config.API_KEY)
-	# jsonFile = JsonFile(options)
-	
 	start_time = datetime.now()
 	print(f'Started at {start_time}')
 
@@ -32,17 +29,25 @@ def main():
 		k = 0
 		index = 0
 
-		initilizer = ServiceOptions()
+		initilizer = Initializer()
+		# ows = OpenWeatherServer(options.config.API_KEY)
+		# jsonFile = JsonFile(options)
+		
+		config = ConfigParser()
+		config.read('serviceconfig.ini')
+
 		city = City()
 		cities = city.get_all_names()
-		'''
-		query_count = math.floor(len(cities) /  options.MAX_GROUP_QUERY_LIMIT) + 1
+
+		query_limit = config.get('Settings', 'MaxGroupQueryLimit')
+		
+		query_count = math.ceil(len(cities) /  query_limit)
 		
 		rows_mysql = []
 
 		openweather_id_list = []
 		query_token = ''
-
+'''
 		for i in range(query_count):
 			
 			for k in range(options.MAX_GROUP_QUERY_LIMIT):
