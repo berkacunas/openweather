@@ -12,6 +12,7 @@ from datetime import datetime
 from configparser import ConfigParser
 import math
 
+from OpenWeatherServer import OpenWeatherServer
 from City import City
 from LogMe import error_message
 from Initializer import Initializer
@@ -30,45 +31,47 @@ def main():
 		index = 0
 
 		initilizer = Initializer()
-		# ows = OpenWeatherServer(options.config.API_KEY)
+		ows = OpenWeatherServer()
 		# jsonFile = JsonFile(options)
 		
 		config = ConfigParser()
 		config.read('serviceconfig.ini')
 
 		city = City()
-		cities = city.get_all_names()
+		cities = city.get_all()
 
-		query_limit = config.get('Settings', 'MaxGroupQueryLimit')
+		query_limit = config.getint('Settings', 'MaxGroupQueryLimit')
 		
 		query_count = math.ceil(len(cities) /  query_limit)
 		
-		rows_mysql = []
+		rows = []
 
-		openweather_id_list = []
+		openweather_ids = []
 		query_token = ''
-'''
+		
 		for i in range(query_count):
 			
-			for k in range(options.MAX_GROUP_QUERY_LIMIT):
+			for k in range(query_limit):
 				if index == len(cities):
 					break
 
-				openweather_id_list.append(str(cities[index].city.openweather_id))
+				openweather_ids.append(str(cities[index].openweather_id))
 				index += 1
 
-			if len(openweather_id_list) > 0:
+			if len(openweather_ids) > 0:
 				query_token = ''
-				query_token = ','.join(openweather_id_list)[:-1]
-				response, query_string, NOW = ows.get_responses(query_token)
-				datalist = response.json()
+				query_token = ','.join(openweather_ids)[:-1]
 
-				jsonFile.save_data(datalist)
+				openweatherdata = ows.get_group_openweatherdata(query_token)
+				# response, query_string, NOW = ows.get_responses(query_token)
+				# datalist = response.json()
+
+				# jsonFile.save_data(datalist)
 
 				
-				loggerMySQL.init_query_time(datalist, query_string, NOW)
-				loggerMySQL.insert()
-				loggerMySQL.get_id(loggerMySQL.dt, loggerMySQL.query_time)
+				# loggerMySQL.init_query_time(datalist, query_string, NOW)
+				# loggerMySQL.insert()
+				# loggerMySQL.get_id(loggerMySQL.dt, loggerMySQL.query_time)
 
 				for data in datalist['list']:
 					try:
@@ -104,7 +107,7 @@ def main():
 		query_log = f'Query completed successfully in {query_duration} '
 		print(query_log)
 		log_list.append(query_log)
-'''
+
 	except Exception as error:
 		print(error_message('main()', error))
 		# log_list.append(error_message('main()', error))

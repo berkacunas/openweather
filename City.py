@@ -99,7 +99,7 @@ class City():
 
 	def get_all(self) -> list:
 
-		return self.crud.get_all()
+		return self.crud.select_all()
 
 	def get_all_names(self) -> list:
 
@@ -140,6 +140,8 @@ class CityCRUD():
 				city.openweather_id = int(item[6])
 
 			city.state = item[7]
+
+			return city
 
 		except Exception as error:
 			raise TupleLoadingError(error)
@@ -253,9 +255,8 @@ class CityCRUD():
 					city = CityCRUD.load_tuple(row)
 					cities.append(city)
 	 
-				fi = frame_info()
-				print(info_message(print_frame_info(fi), 'All cities are got.'))
-				self.logMe.write(info_message(print_frame_info(fi), 'All cities are got.'))
+				print(info_message('CityCRUD::select_all()', 'All cities are got.'))
+				self.logMe.write(info_message('CityCRUD::select_all()', 'All cities are got.'))
 
 			return cities
 			
