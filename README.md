@@ -1,2 +1,2 @@
 # openweather
-OpenWeather Service Module.
+OpenWeather Service Module in development.
