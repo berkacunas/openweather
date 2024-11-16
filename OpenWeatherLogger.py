@@ -1,3 +1,4 @@
+import os
 import platform
 
 from datetime import datetime
@@ -18,7 +19,7 @@ class OpenWeatherLogger:
 		self.query_date = query_date
 		self.query_time = query_time
 		self.dt = dt
-		self.username = username
+		if (not username): self.username = os.getlogin()
 		if (not computer_name): self.computer_name = platform.node()
 		if (not system_os): self.system_os = platform.platform()
 		if (not python_version): self.python_version = platform.python_version()
@@ -61,7 +62,7 @@ class OpenWeatherLoggerCRUD():
 			sql = '''INSERT INTO log(hourly_query, query_string, query_date, query_time, dt, username, computer_name, system_os, python_version) 
 								VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s) '''
 		
-			cur.execute(sql, (logger.hourly_query, logger.query_string, logger.query_date, logger.query_time, self.dt, self.username, self.computer_name, 
+			cur.execute(sql, (logger.hourly_query, logger.query_string, logger.query_date, logger.query_time, logger.dt, logger.username, logger.computer_name, 
 								logger.system_os, logger.python_version))
 
 			cur.close()
@@ -71,9 +72,8 @@ class OpenWeatherLoggerCRUD():
 			self.logMe.write(info_message('OpenWeatherLoggerCRUD::insert()', 'OpenWeather query logged.'))
 			
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logMe.write(error_message(print_frame_info(fi), error))
+			print(error_message('OpenWeatherLoggerCRUD::insert()', error))
+			self.logMe.write(error_message('OpenWeatherLoggerCRUD::insert()', error))
 		
 		finally:
 			if conn:

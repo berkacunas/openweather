@@ -88,8 +88,6 @@ class LogMe:
 		
 		except Exception as error:
 			raise LoggingFileError(error)
-		else:
-			print(info_message('LogMe::write()', 'Log file is written to disk.'))
 
 	def write_collection(self, filename=None):
 	
@@ -123,7 +121,3 @@ class LogMe:
 		
 		except Exception as error:
 			raise LoggingFileError(error)
-   
-		else:
-			print(info_message('LogMe::write_collection()', 'Log file list is written to disk.'))
-   

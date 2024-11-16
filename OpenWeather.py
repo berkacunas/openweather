@@ -14,6 +14,7 @@ import math
 
 from OpenWeatherServer import OpenWeatherServer
 from OpenWeatherLogger import OpenWeatherLogger
+from WeatherData import WeatherData
 from City import City
 from LogMe import error_message
 from Initializer import Initializer
@@ -38,39 +39,43 @@ def main():
 		config = ConfigParser()
 		config.read('serviceconfig.ini')
 
-		city = City()
-		cities = city.get_all()
-
-		query_limit = config.getint('Settings', 'MaxGroupQueryLimit')
 		
-		query_count = math.ceil(len(cities) /  query_limit)
+		city = City()
+		################################################################ 1
+
+		openweather_ids = city.get_all_openweather_ids()
+
+		max_query_limit = config.getint('Settings', 'MaxGroupQueryLimit')
+		
+		loop_count = math.ceil(len(openweather_ids) /  max_query_limit)
 		
 		rows = []
-
-		openweather_ids = []
+		query_ids = []
 		query_token = ''
-		
-		for i in range(query_count):
+
+		for i in range(loop_count):
 			
-			for k in range(query_limit):
-				if index == len(cities):
+			for k in range(max_query_limit):
+
+				if index == len(openweather_ids):
 					break
 
-				openweather_ids.append(str(cities[index].openweather_id))
+				query_ids.append(str(openweather_ids[index]))
 				index += 1
-
-			if len(openweather_ids) > 0:
+			
+			if len(query_ids) > 0:
 				query_token = ''
-				query_token = ','.join(openweather_ids)[:-1]
+				query_token = ','.join(query_ids)[:-1]
 
 				openweatherdata = ows.get_group_openweatherdata(query_token)
 				datalist = openweatherdata.json
-				
+
 				first_data_dt = int(datalist['list'][0]["dt"])
 
 				logger = OpenWeatherLogger()
 				logger.mark(first_data_dt, openweatherdata.url, openweatherdata.query_time)
-				logger.add()
+				logger_id = logger.add()				
+
 
 
 				for data in datalist['list']:

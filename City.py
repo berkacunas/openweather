@@ -10,12 +10,23 @@
 #																													#
 #																													#
 # Class City																										#
+#	private:																										#
 # 		- copy(self, other)																							#
 #																													#
 #																													#
 # Class CityCRUD																									#
 #	private:																										#
 #		- load_tuple(item) -> City																					#
+#		- load(self, id)																							#
+#	public:																											#
+#		- add(self)																									#
+#		- remove(self)																								#
+#		- get_id_by_name(self, name) -> int																			#
+#		- get_name_by_id(self, id) -> str																			#
+#		- get_all(self) -> list																						#
+#		- get_all_names(self) -> list																				#
+#		- get_all_openweather_ids(self) -> list																		#
+#																								#
 #																													#
 # 	public:																											#
 #		- select(self, id) -> City																					#
@@ -23,6 +34,7 @@
 #		- select_all(self) -> list													@staticmethod-like				#
 #		- select_name_by_id(self, city_id: int) -> str								@staticmethod-like				#
 #		- select_all_names(self) -> list											@staticmethod-like				#
+#		- select_all_openweather_ids(self) -> list									@staticmethod-like				#
 #		- insert(self, city: City)																					#
 #		- update(self, id: int, city: City)																			#
 #		- delete(self, id)																							#
@@ -88,6 +100,14 @@ class City():
 
 		self.copy(self.crud.select(id))
 
+	def add(self):
+		
+		self.crud.insert(self)
+
+	def remove(self):
+
+		self.crud.delete(self.id)
+
 	def get_id_by_name(self, name) -> int:
 
 		return self.crud.select_id_by_name(name)
@@ -104,13 +124,11 @@ class City():
 
 		return self.crud.select_all_names()
 
-	def add(self):
-		
-		self.crud.insert(self)
+	def get_all_openweather_ids(self) -> list:
 
-	def remove(self):
+		return self.crud.select_all_openweather_ids()
 
-		self.crud.delete(self.id)
+
 
 class CityCRUD():
 
@@ -297,6 +315,38 @@ class CityCRUD():
 			print(error_message(print_frame_info(fi), error))
 			self.logMe.write(error_message(print_frame_info(fi), error))
 			
+		finally:
+			if conn:
+				conn.close()
+
+	def select_all_openweather_ids(self) -> list:
+
+		openweather_ids = []
+		try:
+			conn = self.dbConn.createMySQLConnection()
+			curr = conn.cursor()
+
+			sql = "SELECT openweather_id FROM city"
+			curr.execute(sql)
+
+			rows = curr.fetchall()
+
+			if rows:
+				for row in rows:
+					openweather_ids.append(row[0])
+
+			curr.close()
+			conn.commit()
+
+			print(info_message('CityCRUD::select_all_openweather_ids()', 'All city openweather ids are got.'))
+			self.logMe.write(info_message('CityCRUD::select_all_openweather_ids()', 'All city openweather ids are got.'))
+
+			return openweather_ids
+
+		except Exception as error:
+			print(error_message('CityCRUD::select_all_openweather_ids()', error))
+			self.logMe.write(error_message('CityCRUD::select_all_openweather_ids()', error))
+
 		finally:
 			if conn:
 				conn.close()
