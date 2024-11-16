@@ -266,6 +266,7 @@ class CityCRUD():
 			sql = "SELECT id, name, longitude, latitude, country_code, timezone, openweather_id, state FROM city"
 			cur.execute(sql)
 			rows = cur.fetchall()
+			cur.close()
 			
 			if rows:
 				for row in rows:
