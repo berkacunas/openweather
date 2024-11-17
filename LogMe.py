@@ -62,7 +62,7 @@ class LogMe:
 
 		self.log_dir = config.get('Directories', 'LogDirectory')
 		self.filename = f'{datetime.now().strftime("%Y.%m.%d")}_openweather.log'	# %Y.%m.%d %H%M%S
-		self.logfile = os.path.join(self.log_dir, self.filename) 
+		self.logfile = os.path.join(self.log_dir, self.filename)
 
 	def write(self, message):
 

@@ -1,0 +1,30 @@
+# Wind Degree CASES
+#	  WHEN wind_degree > (315 + 22.5) OR wind_degree <= (0 + 22.5) THEN 'N'
+#	  WHEN wind_degree > (0 + 22.5) AND wind_degree <= (45 + 22.5) THEN 'NE'
+#	  WHEN wind_degree > (45 + 22.5) AND wind_degree <= (90 + 22.5) THEN 'E'
+#	  WHEN wind_degree > (90 + 22.5) AND wind_degree <= (135 + 22.5) THEN 'SE'
+#	  WHEN wind_degree > (135 + 22.5) AND wind_degree <= (180 + 22.5) THEN 'S'
+#	  WHEN wind_degree > (180 + 22.5) AND wind_degree <= (225 + 22.5) THEN 'SW'
+#	  WHEN wind_degree > (225 + 22.5) AND wind_degree <= (270 + 22.5) THEN 'W'
+#	  WHEN wind_degree > (270 + 22.5) AND wind_degree <= (315 + 22.5) THEN 'NW'
+#		ELSE 'False'
+# END As 'Wind Degree'
+
+# WHEN description = 'clear sky' THEN 'Güneşli'
+#	  WHEN description = 'broken clouds' THEN 'Çok bulutlu'
+#	  WHEN description = 'scattered clouds' THEN 'Parçalı bulutlu'
+#	  WHEN description = 'few clouds' THEN 'Az bulutlu'
+#	  WHEN description = 'light rain' THEN 'Hafif yağmurlu'
+#	  WHEN description = 'light intensity shower rain' THEN 'Hafif sağanak yağışlı'
+#	  WHEN description = 'overcast clouds' THEN 'Kapalı'
+#	  WHEN description = 'mist' THEN 'Sisli'
+
+# Rüzgar Yön İsimleri
+# Kuzey (N) = Yıldız 
+# Kuzeydoğu (NE) = Poyraz 
+# Doğu (E) = Gündoğusu 
+# Güneydoğu (SE) = Keşişleme 
+# Güney (S) = Kıble 
+# Güneybatı (SW) = Lodos 
+# Batı (W) = Günbatısı 
+# Kuzeybatı (NW) = Karayel

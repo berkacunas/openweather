@@ -9,8 +9,8 @@ from OpenWeatherException import OpenWeatherLoggerNotMarkedError
 
 class OpenWeatherLogger:
 	
-	def __init__(self, query_string=None, query_date=None, query_time=None, dt=None, username=None, 
-			  computer_name=None, system_os=None, python_version=None):
+	def __init__(self, query_string=None, query_date=None, query_time=None, dt=None, system_name=None, system_os=None, 
+			  username=None, computer_name=None, python_version=None):
 		
 		self.is_marked = False
 
@@ -19,9 +19,17 @@ class OpenWeatherLogger:
 		self.query_date = query_date
 		self.query_time = query_time
 		self.dt = dt
-		if (not username): self.username = os.getlogin()
-		if (not computer_name): self.computer_name = platform.node()
+
+		if (not system_name) : self.system_name = platform.system()
 		if (not system_os): self.system_os = platform.platform()
+
+		if not username: 
+			if self.system_name == 'Linux':
+				self.username = os.environ.get('USER')
+			elif self.system_name == 'Windows':
+				self.username = os.getlogin()
+
+		if (not computer_name): self.computer_name = platform.node()
 		if (not python_version): self.python_version = platform.python_version()
 
 		self.crud = OpenWeatherLoggerCRUD()
@@ -59,11 +67,11 @@ class OpenWeatherLoggerCRUD():
 			conn = self.dbConn.createMySQLConnection()
 			cur = conn.cursor()
 
-			sql = '''INSERT INTO log(hourly_query, query_string, query_date, query_time, dt, username, computer_name, system_os, python_version) 
-								VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s) '''
+			sql = '''INSERT INTO log(hourly_query, query_string, query_date, query_time, dt, username, computer_name, system_name, system_os, python_version) 
+								VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) '''
 		
 			cur.execute(sql, (logger.hourly_query, logger.query_string, logger.query_date, logger.query_time, logger.dt, logger.username, logger.computer_name, 
-								logger.system_os, logger.python_version))
+								logger.system_name, logger.system_os, logger.python_version))
 
 			cur.close()
 			conn.commit()

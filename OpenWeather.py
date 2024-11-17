@@ -15,8 +15,9 @@ import math
 from OpenWeatherServer import OpenWeatherServer
 from OpenWeatherLogger import OpenWeatherLogger
 from WeatherData import WeatherData
+from WeatherDataParser import WeatherDataParser
 from City import City
-from LogMe import error_message
+from LogMe import LogMe, info_message, error_message
 from Initializer import Initializer
 
 def main():
@@ -34,19 +35,16 @@ def main():
 
 		initilizer = Initializer()
 		ows = OpenWeatherServer()
-		# jsonFile = JsonFile(options)
 		
 		config = ConfigParser()
 		config.read('serviceconfig.ini')
 
+		logMe = LogMe()
 		
 		city = City()
-		################################################################ 1
-
 		openweather_ids = city.get_all_openweather_ids()
 
 		max_query_limit = config.getint('Settings', 'MaxGroupQueryLimit')
-		
 		loop_count = math.ceil(len(openweather_ids) /  max_query_limit)
 		
 		rows = []
@@ -76,52 +74,45 @@ def main():
 				logger.mark(first_data_dt, openweatherdata.url, openweatherdata.query_time)
 				logger_id = logger.add()				
 
-
-
 				for data in datalist['list']:
 					try:
-						weatherDataMySQL = WeatherDataMySQL(options)
-						weatherDataMySQL.wd.parse(data, kelvin_to_celcius=True)
-						weatherDataMySQL.query_id = loggerMySQL_id
+						parser = WeatherDataParser()
+						weatherData = parser.parse(data, is_kelvin_to_celcius=True)
+						weatherData.logger_id = logger_id
 
-						if not weatherDataMySQL.is_dt_exists():
-							rows_mysql.append(weatherDataMySQL.to_list())
+						if not weatherData.is_exists():
+							rows.append(weatherData.to_list())
 
 					except Exception as error:
-						print(error_message('main() => weatherDataMySQL.parse(data, kelvin_to_celcius=True)', error))
-						log_list.append(error_message('main() => weatherDataMySQL.parse(data, kelvin_to_celcius=True)', error))
+						print(error_message('main()::under \'for data in datalist[\'list\']:\'', error))
+						logMe.write(error_message('main()::under \'for data in datalist[\'list\']:\'', error))
 
-				openweather_id_list.clear()
+				query_ids.clear()
 				k = 0
 
 		try:
-			if len(rows_mysql) > 0:
-				weatherDataMySQL.insertmany(rows_mysql)
+			if len(rows) > 0:
+				weatherData.add_all(rows)
 
-				mysql_log = f'New MySQL Records          --->    {len(rows_mysql)}'
-				print(mysql_log)
-				log_list.append(mysql_log)
+				print(info_message('main()', f'{len(rows)} records successfull added to database.'))
+				logMe.write(info_message('main()', f'{len(rows)} records successfull added to database.'))
 
 		except Exception as mysql_error:
-			print(f'Error at weatherDataMySQL.insertmany(rows) -> int : {mysql_error}')
-			
+			print(error_message('main()::under \'weatherData.add_all(rows)\'', error))
+			logMe.write(error_message('main()::under \'weatherData.add_all(rows)\'', error))
 
 		end_time = datetime.now()
 
-		query_duration = end_time - start_time
-		query_log = f'Query completed successfully in {query_duration} '
-		print(query_log)
-		log_list.append(query_log)
+		service_uptime = end_time - start_time
+		service_complete_log = f'Queries completed successfully in {service_uptime}'
+
+		print(info_message('main()', service_complete_log))
+		logMe.write(info_message('main()', service_complete_log))
 
 	except Exception as error:
-		print(error_message('main()', error))
-		# log_list.append(error_message('main()', error))
-		pass
-	
-	finally:
-		pass
-		# if options.config.log_on:
-		# 	log_list_to_file(options)
+		print(error_message('main():: main block error', error))
+		logMe.write(error_message('main():: main block error', error))
+
 
 
 if __name__ == "__main__":

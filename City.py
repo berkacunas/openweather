@@ -12,21 +12,21 @@
 # Class City																										#
 #	private:																										#
 # 		- copy(self, other)																							#
+# 		- load(self, id)																							#
+#	public:																											#
+#		- add(self)																									#
+#       - remove(self)																								#
+#       - get_id_by_name(self, name) -> int																			#
+#       - get_name_by_id(self, id) -> str																			#
+#       - get_all(self) -> list																						#
+#       - get_all_names(self) -> list																				#
+#       - get_all_openweather_ids(self) -> list																		#
+#																													#
 #																													#
 #																													#
 # Class CityCRUD																									#
 #	private:																										#
 #		- load_tuple(item) -> City																					#
-#		- load(self, id)																							#
-#	public:																											#
-#		- add(self)																									#
-#		- remove(self)																								#
-#		- get_id_by_name(self, name) -> int																			#
-#		- get_name_by_id(self, id) -> str																			#
-#		- get_all(self) -> list																						#
-#		- get_all_names(self) -> list																				#
-#		- get_all_openweather_ids(self) -> list																		#
-#																								#
 #																													#
 # 	public:																											#
 #		- select(self, id) -> City																					#
@@ -87,14 +87,12 @@ class City():
 			self.state = other.city.state
 
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logMe.write(error_message(print_frame_info(fi), error))
+			print(error_message('CityCRUD::copy()', error))
+			self.logMe.write(error_message('CityCRUD::copy()', error))
    
 		else:
-			fi = frame_info()
-			print(info_message(print_frame_info(fi), 'Other copied.'))
-			self.logMe.write(info_message(print_frame_info(fi), 'Other copied.'))
+			print(info_message('CityCRUD::copy()', 'City selected.'))
+			self.logMe.write(info_message('CityCRUD::copy()', 'City selected.'))
 
 	def load(self, id):
 
@@ -127,7 +125,6 @@ class City():
 	def get_all_openweather_ids(self) -> list:
 
 		return self.crud.select_all_openweather_ids()
-
 
 
 class CityCRUD():
@@ -172,21 +169,20 @@ class CityCRUD():
 			sql = "SELECT id, name, longitude, latitude, country_code, timezone, openweather_id, state FROM city WHERE id = %s"
 			cur.execute(sql, (id, ))
 			row = cur.fetchone()
+			cur.close()
 			
 			city = None
 			if row:
 				city = CityCRUD.load_tuple(row)
 	
-				fi = frame_info()
-				print(info_message(print_frame_info(fi), 'City selected.'))
-				self.logMe.write(info_message(print_frame_info(fi), 'City selected.'))
+				print(info_message('CityCRUD::select()', 'City selected.'))
+				self.logMe.write(info_message('CityCRUD::select()', 'City selected.'))
 	
 			return city
 
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logMe.write(error_message(print_frame_info(fi), error))
+			print(error_message('CityCRUD::select()', error))
+			self.logMe.write(error_message('CityCRUD::select()', error))
 		
 		finally:
 			if conn:
@@ -197,11 +193,6 @@ class CityCRUD():
   		If  city doesn't exist, returns -1.'''
 
 		try:
-			with open('citydiff.json', 'r') as f:
-				data = json.load(f)
-				if city_name in data.keys():
-					city_name = data[city_name]
-
 			conn = self.dbConn.createMySQLConnection()
 			cur = conn.cursor()
 
@@ -210,18 +201,16 @@ class CityCRUD():
 			row = cur.fetchone()
 
 			if row:
-				fi = frame_info()
-				print(info_message(print_frame_info(fi), 'City id is got.'))
-				self.logMe.write(info_message(print_frame_info(fi), 'City id is got.'))
+				print(info_message('CityCRUD::select_id_by_name()', 'City id is got.'))
+				self.logMe.write(info_message('CityCRUD::select_id_by_name()', 'City id is got.'))
    
 				return int(row[0])
 
 			return -1
 			
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logMe.write(error_message(print_frame_info(fi), error))
+			print(error_message('CityCRUD::select_id_by_name()', error))
+			self.logMe.write(error_message('CityCRUD::select_id_by_name()', error))
 		
 		finally:
 			if conn:
@@ -237,9 +226,8 @@ class CityCRUD():
 			cur.execute(sql, (id, ))
 			row = cur.fetchone()
 
-			fi = frame_info()
-			print(info_message(print_frame_info(fi), 'City name is got.'))
-			self.logMe.write(info_message(print_frame_info(fi), 'City name is got.'))
+			print(info_message('CityCRUD::select_name_by_id()', 'City name is got.'))
+			self.logMe.write(info_message('CityCRUD::select_name_by_id()', 'City name is got.'))
 
 			if row:
 				return str(row[0])
@@ -247,9 +235,8 @@ class CityCRUD():
 			return None
 			
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logMe.write(error_message(print_frame_info(fi), error))
+			print(error_message('CityCRUD::select_name_by_id()', error))
+			self.logMe.write(error_message('CityCRUD::select_name_by_id()', error))
 		
 		finally:
 			if conn:
@@ -279,9 +266,8 @@ class CityCRUD():
 			return cities
 			
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logMe.write(error_message(print_frame_info(fi), error))
+			print(error_message('CityCRUD::select_all()', error))
+			self.logMe.write(error_message('CityCRUD::select_all()', error))
 		
 		finally:
 			if conn:
@@ -312,9 +298,8 @@ class CityCRUD():
 			return cities
 		
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logMe.write(error_message(print_frame_info(fi), error))
+			print(error_message('CityCRUD::select_all_names()', error))
+			self.logMe.write(error_message('CityCRUD::select_all_names()', error))
 			
 		finally:
 			if conn:
@@ -336,11 +321,11 @@ class CityCRUD():
 				for row in rows:
 					openweather_ids.append(row[0])
 
+				print(info_message('CityCRUD::select_all_openweather_ids()', 'All city openweather ids are got.'))
+				self.logMe.write(info_message('CityCRUD::select_all_openweather_ids()', 'All city openweather ids are got.'))
+
 			curr.close()
 			conn.commit()
-
-			print(info_message('CityCRUD::select_all_openweather_ids()', 'All city openweather ids are got.'))
-			self.logMe.write(info_message('CityCRUD::select_all_openweather_ids()', 'All city openweather ids are got.'))
 
 			return openweather_ids
 
@@ -369,14 +354,12 @@ class CityCRUD():
 				conn.commit()
 			
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logMe.write(error_message(print_frame_info(fi), error))
+			print(error_message('CityCRUD::insert()', error))
+			self.logMe.write(error_message('CityCRUD::insert()', error))
    
 		else:
-			fi = frame_info()
-			print(info_message(print_frame_info(fi), 'City inserted.'))
-			self.logMe.write(info_message(print_frame_info(fi), 'City inserted.'))
+			print(info_message('CityCRUD::insert()', 'City inserted.'))
+			self.logMe.write(info_message('CityCRUD::insert()', 'City inserted.'))
 		
 		finally:
 			if conn:
@@ -401,14 +384,12 @@ class CityCRUD():
 				conn.commit()
 			
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logMe.write(error_message(print_frame_info(fi), error))
+			print(error_message('CityCRUD::update()', error))
+			self.logMe.write(error_message('CityCRUD::update()', error))
    
 		else:
-			fi = frame_info()
-			print(info_message(print_frame_info(fi), 'City updated.'))
-			self.logMe.write(info_message(print_frame_info(fi), 'City updated.'))
+			print(info_message('CityCRUD::update()', 'City updated.'))
+			self.logMe.write(info_message('CityCRUD::update()', 'City updated.'))
 		
 		finally:
 			if conn:
@@ -431,14 +412,12 @@ class CityCRUD():
 				conn.commit()
 			
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logMe.write(error_message(print_frame_info(fi), error))
+			print(error_message('CityCRUD::delete()', error))
+			self.logMe.write(error_message('CityCRUD::delete()', error))
    
 		else:
-			fi = frame_info()
-			print(info_message(print_frame_info(fi), 'City deleted.'))
-			self.logMe.write(info_message(print_frame_info(fi), 'City deleted.'))
+			print(info_message('CityCRUD::delete()', 'City deleted.'))
+			self.logMe.write(info_message('CityCRUD::delete()', 'City deleted.'))
 		
 		finally:
 			if conn:
@@ -455,20 +434,18 @@ class CityCRUD():
 			sql = 'SELECT COUNT(id) FROM city WHERE openweather_id = %s'
 			cur.execute(sql, (openweather_id, ))
 			row = cur.fetchone()
-
-			fi = frame_info()
-			print(info_message(print_frame_info(fi), 'Is city exists checked.'))
-			self.logMe.write(info_message(print_frame_info(fi), 'Is city exists checked.'))
    
 			if row:
+				print(info_message('CityCRUD::is_exists()', 'Is city exists checked.'))
+				self.logMe.write(info_message('CityCRUD::is_exists()', 'Is city exists checked.'))
+
 				return int(row[0]) > 0
 
 			return -1
 			
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logMe.write(error_message(print_frame_info(fi), error))
+			print(error_message('CityCRUD::is_exists()', error))
+			self.logMe.write(error_message('CityCRUD::is_exists()', error))
    
 		finally:
 			if conn:
@@ -486,19 +463,17 @@ class CityCRUD():
 			cur.execute(sql, (country_code, ))
 			row = cur.fetchone()
    
-			fi = frame_info()
-			print(info_message(print_frame_info(fi), 'Country name is got by country code.'))
-			self.logMe.write(info_message(print_frame_info(fi), 'Country name is got by country code.'))
-   
 			if row:
+				print(info_message('CityCRUD::select_country_by_country_code()', 'Country name is got by country code.'))
+				self.logMe.write(info_message('CityCRUD::select_country_by_country_code()', 'Country name is got by country code.'))
+
 				return str(row[0])
 
 			return None
 				
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logMe.write(error_message(print_frame_info(fi), error))
+			print(error_message('CityCRUD::select_country_by_country_code()', error))
+			self.logMe.write(error_message('CityCRUD::select_country_by_country_code()', error))
 		
 		finally:
 			if conn:
@@ -519,16 +494,14 @@ class CityCRUD():
 				for row in rows:
 					countryDict[row[1]] = row[0]
 				
-				fi = frame_info()
-				print(info_message(print_frame_info(fi), 'All countries are got into a dictionary.'))
-				self.logMe.write(info_message(print_frame_info(fi), 'All countries are got into a dictionary.'))
+				print(info_message('CityCRUD::select_countries()', 'All countries are got into a dictionary.'))
+				self.logMe.write(info_message('CityCRUD::select_countries()', 'All countries are got into a dictionary.'))
    
 			return countryDict
 				
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logMe.write(error_message(print_frame_info(fi), error))
+			print(error_message('CityCRUD::select_countries()', error))
+			self.logMe.write(error_message('CityCRUD::select_countries()', error))
 		
 		finally:
 			if conn:
@@ -547,9 +520,8 @@ class CityCRUD():
 			cur.close()
 
 			if row:
-				fi = frame_info()
-				print(info_message(print_frame_info(fi), 'City timezone is got.'))
-				self.logMe.write(info_message(print_frame_info(fi), 'City timezone is got.'))
+				print(info_message('CityCRUD::select_timezone()', 'City timezone is got.'))
+				self.logMe.write(info_message('CityCRUD::select_timezone()', 'City timezone is got.'))
 	   
 				timezone = int(row[0])
 				timezone = timezone / 3600
@@ -558,9 +530,8 @@ class CityCRUD():
 			raise TimezoneError('CityCRUD.get_timezone(self, id) -> int => Can\'t get timezone')
 				
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logMe.write(error_message(print_frame_info(fi), error))
+			print(error_message('CityCRUD::select_timezone()', error))
+			self.logMe.write(error_message('CityCRUD::select_timezone()', error))
 		
 		finally:
 			if conn:
@@ -587,14 +558,12 @@ class CityCRUD():
 					cur.close()
 				
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logMe.write(error_message(print_frame_info(fi), error))
+			print(error_message('CityCRUD::insert_timezone_if_not_exists()', error))
+			self.logMe.write(error_message('CityCRUD::insert_timezone_if_not_exists()', error))
    
 		else:
-			fi = frame_info()
-			print(info_message(print_frame_info(fi), 'Timezone is inserted if not existed before.'))
-			self.logMe.write(info_message(print_frame_info(fi), 'Timezone is inserted if not existed before.'))
+			print(info_message('CityCRUD::insert_timezone_if_not_exists()', 'Timezone is inserted if not exists before.'))
+			self.logMe.write(info_message('CityCRUD::insert_timezone_if_not_exists()', 'Timezone is inserted if not exists before.'))
 	  
 		finally:
 			if conn:
@@ -611,16 +580,17 @@ class CityCRUD():
 			cur.execute(sql, (openweather_id, ))
 			row = cur.fetchone()
 
-			fi = frame_info()
-			print(info_message(print_frame_info(fi), 'City id is got by openweather id.'))
-			self.logMe.write(info_message(print_frame_info(fi), 'City id is got by openweather id.'))
+			if row:
+				print(info_message('CityCRUD::select_id_by_openweather_id()', 'City id is got by openweather id.'))
+				self.logMe.write(info_message('CityCRUD::select_id_by_openweather_id()', 'City id is got by openweather id.'))
 
-			return str(row[0])
+				return str(row[0])
+
+			return -1
 
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logMe.write(error_message(print_frame_info(fi), error))
+			print(error_message('CityCRUD::select_id_by_openweather_id()', error))
+			self.logMe.write(error_message('CityCRUD::select_id_by_openweather_id()', error))
 
 		finally:
 			if conn:
@@ -636,16 +606,15 @@ class CityCRUD():
 			cur.execute(sql, (id, ))
 			row = cur.fetchone()
 
-			fi = frame_info()
-			print(info_message(print_frame_info(fi), 'City openweather id is got by id.'))
-			self.logMe.write(info_message(print_frame_info(fi), 'City openweather id is got by id.'))
+			if row:
+				print(info_message('CityCRUD::select_openweather_id_by_id()', 'City openweather id is got by id.'))
+				self.logMe.write(info_message('CityCRUD::select_openweather_id_by_id()', 'City openweather id is got by id.'))
 
 			return str(row[0])
 
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logMe.write(error_message(print_frame_info(fi), error))
+			print(error_message('CityCRUD::select_openweather_id_by_id()', error))
+			self.logMe.write(error_message('CityCRUD::select_openweather_id_by_id()', error))
 
 		finally:
 			if conn:
@@ -661,16 +630,17 @@ class CityCRUD():
 			cur.execute(sql, (name, ))
 			row = cur.fetchone()
 
-			fi = frame_info()
-			print(info_message(print_frame_info(fi), 'openweather id is got.'))
-			self.logMe.write(info_message(print_frame_info(fi), 'openweather id is got.'))
+			if row:
+				print(info_message('CityCRUD::select_openweather_id_by_name()', 'openweather id is got.'))
+				self.logMe.write(info_message('CityCRUD::select_openweather_id_by_name()', 'openweather id is got.'))
 
-			return int(row[0])
+				return int(row[0])
+
+			return -1
 			
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logMe.write(error_message(print_frame_info(fi), error))
+			print(error_message('CityCRUD::select_openweather_id_by_name()', error))
+			self.logMe.write(error_message('CityCRUD::select_openweather_id_by_name()', error))
 		
 		finally:
 			if conn:
@@ -690,14 +660,12 @@ class CityCRUD():
 			conn.commit()
 			
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logMe.write(error_message(print_frame_info(fi), error))
+			print(error_message('CityCRUD::update_openweather_id_by_id()', error))
+			self.logMe.write(error_message('CityCRUD::update_openweather_id_by_id()', error))
 		
 		else:
-			fi = frame_info()
-			print(info_message(print_frame_info(fi), 'openweather id is updated.'))
-			self.logMe.write(info_message(print_frame_info(fi), 'openweather id is updated.'))
+			print(info_message('CityCRUD::update_openweather_id_by_id()', 'openweather id is updated.'))
+			self.logMe.write(info_message('CityCRUD::update_openweather_id_by_id()', 'openweather id is updated.'))
   
 		finally:
 			if conn:
