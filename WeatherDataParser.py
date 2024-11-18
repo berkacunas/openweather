@@ -16,9 +16,6 @@ class WeatherDataParser:
 
 		with open(city_conflicts_file) as f:
 			self.city_conflicts = json.load(f)
-		
-
-		print(self.city_conflicts)
 
 	def parse(self, data=None, is_kelvin_to_celcius=False) -> WeatherData:
 
