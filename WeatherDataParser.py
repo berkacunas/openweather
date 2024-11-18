@@ -52,6 +52,9 @@ class WeatherDataParser:
 				city_name = data["name"]
 
 			weatherData.city_id = City().get_id_by_name(city_name)
+			if weatherData.city_id == -1:
+				print(f'City with id -1 is : {data["name"]}')
+
 			
 			weatherData.longitude = float(coord["lon"])
 			weatherData.latitude = float(coord["lat"])
