@@ -4,6 +4,8 @@ import json
 from datetime import datetime
 from WeatherData import WeatherData
 from City import City
+from LogMe import LogMe, info_message, error_message
+from OpenWeatherException import CityNotFoundError, ServerDataIsEmptyError
 
 class WeatherDataParser:
 
@@ -21,7 +23,10 @@ class WeatherDataParser:
 
 		weatherData = None
 
-		if data:
+		if not data:
+			raise ServerDataIsEmptyError()
+
+		try:
 
 			weatherData = WeatherData()
 
@@ -50,8 +55,7 @@ class WeatherDataParser:
 
 			weatherData.city_id = City().get_id_by_name(city_name)
 			if weatherData.city_id == -1:
-				print(f'City with id -1 is : {data["name"]}')
-
+				raise CityNotFoundError()
 			
 			weatherData.longitude = float(coord["lon"])
 			weatherData.latitude = float(coord["lat"])
@@ -98,5 +102,12 @@ class WeatherDataParser:
 
 			weatherData.hour_of_the_day = datetime.fromtimestamp(weatherData.dt).hour
 
-			return weatherData
+			print(info_message('WeatherDataParser::parse()', 'Raw data from OpenWeather server parsed into a WeatherData object.'))
+			self.logMe.write(info_message('WeatherDataParser::parse()', 'Raw data from OpenWeather server parsed into a WeatherData object.'))
+
+		except Exception as error:
+			print(error_message('WeatherDataParser.parse()', error))
+			self.g_Options.logMe.logs.append(error_message('WeatherDataParser.parse()', error))
+
+		return weatherData
 	
