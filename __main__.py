@@ -46,10 +46,12 @@ def main():
 			api_key = input()
 			initilizer.save_api_key(api_key)
 
-
 		ows = OpenWeatherServer(api_key)
 
-		parser = argparse.ArgumentParser()
+		config = ConfigParser()
+		config.read('serviceconfig.ini')
+
+		parser = argparse.ArgumentParser(prog="openweather")
 
 		'''
 		İLK ÇALIŞTIRMA
@@ -70,11 +72,8 @@ def main():
 		args = parser.parse_args()
 		path = args.path
 
-		
-		config = ConfigParser()
-		config.read('serviceconfig.ini')
+		return
 
-		
 		city = City()
 		openweather_ids = city.get_all_openweather_ids()
 

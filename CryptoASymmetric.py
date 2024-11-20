@@ -6,7 +6,7 @@ def _generateKeys(privatePath, publicPath, size):
 	global publicKey, privateKey
 	
 	# no keys, let's generate them
-	logging.info("Generating RSA keys of size {0}, please wait...".format(size))
+	logging.info(f'Generating RSA keys of size {size}, please wait...')
 	
 	publicKey, privateKey = rsa.newkeys(size)
 	
@@ -21,8 +21,7 @@ if __name__ == "__main__":
 	
 	_generateKeys('prikey', 'pubkey', 512)
 
-	# this is the string that we will be encrypting
-	message = "hello geeks"
+	message = "Hello asymmetric crypto! "
 
 	encMessage = rsa.encrypt(message.encode(), 
 							publicKey)
