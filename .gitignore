@@ -4,3 +4,4 @@ __pycache__/
 log_pc-mintcinnamon/
 api.key
 secret.key
+serviceconfig.ini
