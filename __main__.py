@@ -12,10 +12,10 @@ from datetime import datetime
 from configparser import ConfigParser
 import math
 import argparse
-# from pathlib import Path
 
 from OpenWeatherServer import OpenWeatherServer
 from OpenWeatherLogger import OpenWeatherLogger
+from OpenWeatherException import ApiKeyNotFoundError
 from WeatherData import WeatherData
 from WeatherDataParser import WeatherDataParser
 from City import City
@@ -28,8 +28,26 @@ def main():
 	print(f'Started at {start_time}')
 
 	cities = None
-	
+	logMe = LogMe()
+
 	try:
+
+		i = 0
+		k = 0
+		index = 0
+		api_key = None
+
+		initilizer = Initializer()
+		
+		try :
+			api_key = initilizer.load_api_key()
+		except ApiKeyNotFoundError as apikeyerror:
+			print('Please register your OpenWeather API KEY: ')
+			api_key = input()
+			initilizer.save_api_key(api_key)
+
+
+		ows = OpenWeatherServer(api_key)
 
 		parser = argparse.ArgumentParser()
 
@@ -52,21 +70,10 @@ def main():
 		args = parser.parse_args()
 		path = args.path
 
-		print(path)
-		return
-
-
-		i = 0
-		k = 0
-		index = 0
-
-		initilizer = Initializer()
-		ows = OpenWeatherServer()
 		
 		config = ConfigParser()
 		config.read('serviceconfig.ini')
 
-		logMe = LogMe()
 		
 		city = City()
 		openweather_ids = city.get_all_openweather_ids()

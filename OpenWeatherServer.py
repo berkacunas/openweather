@@ -12,13 +12,13 @@ class OpenWeatherData:
 
 class OpenWeatherServer:
 
-	def __init__(self):
+	def __init__(self, api_key):
 		
 		
 		self.url = None
 		self.config = ConfigParser()
 		self.config.read('serviceconfig.ini')
-		self.api_key = self.config.get('Keys', 'ApiKey')
+		self.api_key = api_key 			# self.config.get('Keys', 'ApiKey')
 		self.base_url = self.config.get('OpenWeather.Server', 'Url')
 
 	def get_response(self, city_name, units='metric'):

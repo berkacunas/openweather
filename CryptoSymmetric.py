@@ -1,34 +1,36 @@
 from cryptography.fernet import Fernet
+from configparser import ConfigParser
+
+config = ConfigParser()
+config.read('serviceconfig.ini')
+
+secret_key_path = config.get('Paths', 'SecretKeyFile')
 
 def generate_key():
 
-    key = Fernet.generate_key()
-    with open("data/secret.key", "wb") as key_file:
-        key_file.write(key)
+    return Fernet.generate_key()
 
-def load_key():
+def encrypt_message(message, key) -> str:
 
-    return open("data/secret.key", "rb").read()
-
-def encrypt_message(message):
-
-    key = load_key()
     encoded_message = message.encode()
     f = Fernet(key)
     encrypted_message = f.encrypt(encoded_message)
 
-    print(encrypted_message)
+    return encrypted_message
 
-def decrypt_message(encrypted_message):
+def decrypt_message(encrypted_message, key) -> str:
     
-    key = load_key()
     f = Fernet(key)
     decrypted_message = f.decrypt(encrypted_message)
 
-    print(decrypted_message.decode())
+    return decrypted_message.decode()
 
 if __name__ == "__main__":
     
-    #generate_key()
-    encrypt_message("Hello Cryptography !")
-    decrypt_message(b'gAAAAABnOkctUVhYSiQ-2lbGOepYva5lA5PWN0zogfIQCQCMfghuvYDpzT983vEbJKVdeAWyhDwlhnzWlmTYtfgZGvT8QnIqXCLxiaFX69n6VGC0hEVQOuc=')
+    key = generate_key()
+    encrypted_message = encrypt_message("Hello Cryptography !", key)
+    print(encrypted_message)
+
+    decrypted_message = decrypt_message(encrypted_message, key)
+    print(decrypted_message)
+    
