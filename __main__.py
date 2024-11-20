@@ -67,7 +67,7 @@ def main():
 		5. Veritabanı yaratılmışsa herhangi bir şehrin istenen datetime bilgilerindeki WeatherData'sı döndürülsün.
 		'''
 		
-		parser.add_argument("path")
+		# parser.add_argument("path")
 
 		args = parser.parse_args()
 		path = args.path
