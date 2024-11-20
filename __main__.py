@@ -11,6 +11,8 @@
 from datetime import datetime
 from configparser import ConfigParser
 import math
+import argparse
+# from pathlib import Path
 
 from OpenWeatherServer import OpenWeatherServer
 from OpenWeatherLogger import OpenWeatherLogger
@@ -28,8 +30,31 @@ def main():
 	cities = None
 	
 	try:
-		print('hello')
+
+		parser = argparse.ArgumentParser()
+
+		'''
+		İLK ÇALIŞTIRMA
+		1. User'a kendi API key'ini sorsun. (API_KEY bir dosyada tek yönlü kullanıcı şifresi ile şifrelenmiş tutulsun.)
+		2. MySQL veritabanı kurmasının istenip istenilmediği sorulsun.
+		3. Çıktıyı komut satırına (stdout), txt veyas json dosyasına isteyip istemediği sorulsun.
+		
+		ÇALIŞ
+		1. Şehrin o anki weatherdata bilgilerini indirip stdout'a yazsın.
+		2. Günlük kaç server query atıldığı hakkında datetime'ları ile bir flag ya da subcommand ile ile bilgilendirilsin. ex. openweather log gibi
+		3. Komut satırından argüman olarak girilen şehirlerin openweather_id'leri döndürülsün.
+		4. openweather_id ile group query atılsın.
+		5. Veritabanı yaratılmışsa herhangi bir şehrin istenen datetime bilgilerindeki WeatherData'sı döndürülsün.
+		'''
+		
+		parser.add_argument("path")
+
+		args = parser.parse_args()
+		path = args.path
+
+		print(path)
 		return
+
 
 		i = 0
 		k = 0
