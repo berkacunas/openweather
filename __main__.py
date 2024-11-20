@@ -22,6 +22,9 @@ from City import City
 from LogMe import LogMe, info_message, error_message
 from Initializer import Initializer
 
+def exists(var):
+    return var in globals() or var in locals()
+
 def main():
 
 	start_time = datetime.now()
@@ -37,21 +40,45 @@ def main():
 		index = 0
 		api_key = None
 
+		config = ConfigParser()
+		config.read('serviceconfig.ini')
+
 		initilizer = Initializer()
+
+		global_parser = argparse.ArgumentParser(prog='openweather', 
+								   		 description='OpenWeather Server and Data Management Module',
+										 epilog='Thanks for using %(prog)s!')
+		
+		subparsers = global_parser.add_subparsers(title="subcommands")
+
+		api_parser = subparsers.add_parser("api", help="api operations")
+		api_parser.add_argument('--newkey')
+
+		args = global_parser.parse_args()
+
+		try: 
+			if args.newkey:
+				print('Your new api key will overwrite previous api key. There will be no return. Do you want to continue? (Y/n)')
+				go_on = input()
+				if str.lower(go_on) == 'y':
+					api_key = args.newkey
+					initilizer.save_api_key(api_key)
+				else:
+					return
+		except Exception as error:
+			pass
 		
 		try :
 			api_key = initilizer.load_api_key()
 		except ApiKeyNotFoundError as apikeyerror:
-			print('Please register your OpenWeather API KEY: ')
-			api_key = input()
-			initilizer.save_api_key(api_key)
+			print('Api Key not found! Please register your Api Key.\ne.g. $ openweather api --newkey yourapikey')
+			return
+			
 
 		ows = OpenWeatherServer(api_key)
 
-		config = ConfigParser()
-		config.read('serviceconfig.ini')
-
-		parser = argparse.ArgumentParser(prog="openweather")
+		return
+	
 
 		'''
 		İLK ÇALIŞTIRMA
@@ -67,12 +94,7 @@ def main():
 		5. Veritabanı yaratılmışsa herhangi bir şehrin istenen datetime bilgilerindeki WeatherData'sı döndürülsün.
 		'''
 		
-		# parser.add_argument("path")
-
-		args = parser.parse_args()
-		path = args.path
-
-		return
+		
 
 		city = City()
 		openweather_ids = city.get_all_openweather_ids()

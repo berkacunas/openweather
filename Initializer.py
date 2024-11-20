@@ -123,9 +123,6 @@ class Initializer:
 	
 	def save_api_key(self, api_key):
 
-		if os.path.isfile(self.api_key_path):
-			raise ApiKeyDuplicateError()
-		
 		secret_key = self.load_secret_key()
 		encrypted_api_key = CryptoSymmetric.encrypt_message(api_key, secret_key)
 
