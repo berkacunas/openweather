@@ -98,7 +98,7 @@ class Initializer:
 
 		if os.path.isfile(self.secret_key_path):
 			with open(self.secret_key_path, 'rb') as f:
-				secret_key = f.readline()
+				secret_key = f.read()
 		else:
 			secret_key = CryptoSymmetric.generate_key()
 			with open(self.secret_key_path, 'wb') as f:
