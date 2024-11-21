@@ -22,8 +22,28 @@ from City import City
 from LogMe import LogMe, info_message, error_message
 from Initializer import Initializer
 
+# Global variables
+g_initilizer = Initializer()
+
 def exists(var):
     return var in globals() or var in locals()
+
+
+def subparser_api(args):
+
+	if args.newkey:
+
+		print('Your new api key will overwrite previous api key. There will be no return. Do you want to continue? (Y/n)')
+		go_on = input()
+
+		if str.lower(go_on) == 'y':
+			api_key = args.newkey
+			g_initilizer.save_api_key(api_key)
+
+		else:
+			return
+	
+
 
 def main():
 
@@ -43,8 +63,7 @@ def main():
 		config = ConfigParser()
 		config.read('serviceconfig.ini')
 
-		initilizer = Initializer()
-
+		
 		global_parser = argparse.ArgumentParser(prog='openweather', 
 								   		 description='OpenWeather Server and Data Management Module',
 										 epilog='Thanks for using %(prog)s!')
@@ -52,24 +71,20 @@ def main():
 		subparsers = global_parser.add_subparsers(title="subcommands")
 
 		api_parser = subparsers.add_parser("api", help="api operations")
-		api_parser.add_argument('--newkey')
+		api_parser.add_argument('-n', '--newkey')
+		api_parser.set_defaults(func=subparser_api)
 
 		args = global_parser.parse_args()
 
-		try: 
-			if args.newkey:
-				print('Your new api key will overwrite previous api key. There will be no return. Do you want to continue? (Y/n)')
-				go_on = input()
-				if str.lower(go_on) == 'y':
-					api_key = args.newkey
-					initilizer.save_api_key(api_key)
-				else:
-					return
-		except Exception as error:
+		try:
+			if args.func:
+				args.func(args)
+		except AttributeError as error:
 			pass
+
 		
 		try :
-			api_key = initilizer.load_api_key()
+			api_key = g_initilizer.load_api_key()
 		except ApiKeyNotFoundError as apikeyerror:
 			print('Api Key not found! Please register your Api Key.\ne.g. $ openweather api --newkey yourapikey')
 			return
@@ -77,7 +92,6 @@ def main():
 
 		ows = OpenWeatherServer(api_key)
 
-		return
 	
 
 		'''
@@ -93,6 +107,7 @@ def main():
 		4. openweather_id ile group query atılsın.
 		5. Veritabanı yaratılmışsa herhangi bir şehrin istenen datetime bilgilerindeki WeatherData'sı döndürülsün.
 		'''
+		return
 		
 		
 
