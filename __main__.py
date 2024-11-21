@@ -25,16 +25,24 @@ from Initializer import Initializer
 
 # Global variables
 initilizer = Initializer()
+config = ConfigParser()
+config.read('serviceconfig.ini')
+
 
 def exists(var):
-    return var in globals() or var in locals()
+	return var in globals() or var in locals()
 
 def do_you_want_to_continue(message: str) -> bool:
 
-	message += ' Do you want to continue? (Y/n)'
+	message += ' (Y/n)'
 	print(message, end=' ')
 	response = input()
 	return str.lower(response) == 'y'
+
+def global_parser_func(args):
+
+	if args.daemon:
+		initilizer.add_cron_job()
 
 def subparser_apikey_func(args):
 
@@ -44,8 +52,16 @@ def subparser_apikey_func(args):
 		if do_you_want_to_continue(message):
 			api_key = args.newvalue
 			initilizer.save_api_key(api_key)
+
+	if args.print:
+		try:
+			api_key = initilizer.load_api_key()
+			print(f'Api Key: {api_key}')
+
+		except ApiKeyNotFoundError as error:
+			print('Api Key not found !')
 		
-def subparser_mysql_func(args):
+def subparser_db_func(args):
 
 	if args.create:
 
@@ -56,10 +72,24 @@ def subparser_mysql_func(args):
 			print('When it asks for password, it\'s your database login password. OpenWeather doesn\'t store this password for security reasons.')
 			DBConnection().executeSqlFile(db_username)
 
+	if args.activate:
 
+		message = 'Do you want to activate MySQL database?'
+		if do_you_want_to_continue(message):
+			config.set('Database.Online', 'activated', 'True')
+			with open('serviceconfig.ini', "w") as f:
+				config.write(f)
+	
+	if args.deactivate:
+
+		message = 'Do you want to deactivate MySQL database?'
+		if do_you_want_to_continue(message):
+			config.set('Database.Online', 'activated', 'False')
+			with open('serviceconfig.ini', "w") as f:
+				config.write(f)
 
 def main():
-
+	
 	start_time = datetime.now()
 	print(f'Started at {start_time}')
 
@@ -71,24 +101,29 @@ def main():
 		k = 0
 		index = 0
 		api_key = None
-
-		config = ConfigParser()
-		config.read('serviceconfig.ini')
-
 		
 		global_parser = argparse.ArgumentParser(prog='openweather', 
 								   		 description='OpenWeather Server and Data Management Module',
 										 epilog='Thanks for using %(prog)s!')
 		
+		global_parser.add_argument('-d', '--daemon', action="store_true", help='Run as daemon')
+		global_parser.set_defaults(func=global_parser_func)
+		
+
 		subparsers = global_parser.add_subparsers(title="subcommands")
 
-		api_parser = subparsers.add_parser("apikey", help="Api Key Operations")
-		api_parser.add_argument('-n', '--newvalue')
+		api_parser = subparsers.add_parser('apikey', help='Api Key Operations')
+		api_parser.add_argument('-n', '--newvalue', help='Enter new value')
+		api_parser.add_argument('-p', '--print', action='store_true', help='Print Api Key to stdout')
 		api_parser.set_defaults(func=subparser_apikey_func)
 
-		mysql_parser = subparsers.add_parser("db", help="Database Operations")
-		mysql_parser.add_argument('-c', '--create', action="store_true")
-		mysql_parser.set_defaults(func=subparser_mysql_func)
+
+		db_parser = subparsers.add_parser('db', help='Database Operations')
+		db_parser.add_argument('-c', '--create', action='store_true')
+		db_parser.add_argument('-a', '--activate', action='store_true')
+		db_parser.add_argument('-d', '--deactivate', action='store_true')
+
+		db_parser.set_defaults(func=subparser_db_func)
 
 		args = global_parser.parse_args()
 
@@ -97,7 +132,6 @@ def main():
 				args.func(args)
 		except AttributeError as error:
 			pass
-
 		
 		try :
 			api_key = initilizer.load_api_key()
@@ -105,7 +139,6 @@ def main():
 			print('Api Key not found! Please register your Api Key.\ne.g. $ openweather api --newkey yourapikey')
 			return
 			
-
 		ows = OpenWeatherServer(api_key)
 
 	

@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 import subprocess
 from configparser import ConfigParser
+from subprocess import run
 
 from OpenWeatherException import ApiKeyNotFoundError, ApiKeyDuplicateError
 import CryptoSymmetric
@@ -16,6 +17,8 @@ class Initializer:
 		config = ConfigParser()
 		config.read('serviceconfig.ini')
 		
+		self.root_directory = config.get('Directories', 'rootdirectory')
+		self.entry_point = config.get('Application', 'EntryPoint')
 		self.backup_directory = config.get('Directories', 'BackupDirectory')
 		self.log_directory = config.get('Directories', 'LogDirectory')
 		self.csv_directory = config.get('Directories', 'CsvDirectory')
@@ -129,6 +132,8 @@ class Initializer:
 		with open(self.api_key_path, 'wb') as f:
 			f.write(encrypted_api_key)
 
-	
+	def add_cron_job(self):
 
+		cmd = f'(crontab -l ; echo "0,30 * * * * python3 {os.path.join(self.root_directory, self.entry_point)}") 2>&1 | grep -v "no crontab" | uniq | crontab -'
+		run(cmd, shell=True)
 
