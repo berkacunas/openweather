@@ -1,4 +1,5 @@
 import mysql.connector
+from subprocess import Popen, run, PIPE
 from configparser import ConfigParser
 
 from LogMe import LogMe, info_message, error_message, frame_info, print_frame_info
@@ -27,7 +28,8 @@ class DBConnection:
 		self.db_conn_parameter.database = config.get('Database.MySQL', 'DbName')
 		self.db_conn_parameter.user = config.get('Database.MySQL', 'Username')
 		self.db_conn_parameter.password = config.get('Database.MySQL', 'Password')
-		
+
+		self.db_schema_path = config.get('Paths', 'DbSchemaFile')
 
 	def createMySQLConnection(self):
 
@@ -43,15 +45,54 @@ class DBConnection:
 			return conn
 
 		except Exception as error:
-			fi = frame_info()
-			print(error_message(print_frame_info(fi), error))
-			self.logMe.write(error_message(print_frame_info(fi), error))
-
-			#self.options.logMe.logs.append(error_message(print_frame_info(fi), error))
-			#raise Exception(error_message('DBConnection.createMySQLConnection(self, db_conn_parameter: DbConnParameter = None)', error))
+			print(error_message('DBConnection::createMySQLConnection()', error))
+			self.logMe.write(error_message('DBConnection::createMySQLConnection()', error))
 
 		finally:
 			if conn:
 				conn.close
 
+	def isDatabaseExists(self, db_name):
+
+		conn = None
+
+		try:
+			conn = self.createMySQLConnection()
+			curr = conn.cursor()
+
+			sql = 'SHOW DATABASES;'
+
+			curr.execute(sql)
+			rows = curr.fetchall()
+
+			if rows:
+				print(info_message('DBConnection::isDatabaseExists()', 'Checked database exists.'))
+				self.logMe.write(info_message('DBConnection::isDatabaseExists()', 'Checked database exists.'))
+
+				for row in rows:
+					if db_name == row[0]:
+						return True
+					
+			return False
+
+		except Exception as error:
+			print(error_message('DBConnection::isDatabaseExists()', error))
+			self.logMe.write(error_message('DBConnection::isDatabaseExists()', error))
+
+
+
+	def executeSqlFile(self, db_username=None):
+
+		if not db_username:
+			db_username = self.db_conn_parameter.user
+
+		try:
+			run(f"mysql -u {db_username} -p {self.db_conn_parameter.database} < {self.db_schema_path}", shell=True)
+
+			print(info_message('DBConnection::executeSqlFile()', 'MySQL OpenWeather created.'))
+			self.logMe.write(info_message('DBConnection::executeSqlFile()', 'MySQL OpenWeather created.'))
+
+		except Exception as error:
+			print(error_message('DBConnection::executeSqlFile()', error))
+			self.logMe.write(error_message('DBConnection::executeSqlFile()', error))
 	

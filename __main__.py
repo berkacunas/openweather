@@ -19,30 +19,43 @@ from OpenWeatherException import ApiKeyNotFoundError
 from WeatherData import WeatherData
 from WeatherDataParser import WeatherDataParser
 from City import City
+from MySQLConnection import DBConnection
 from LogMe import LogMe, info_message, error_message
 from Initializer import Initializer
 
 # Global variables
-g_initilizer = Initializer()
+initilizer = Initializer()
 
 def exists(var):
     return var in globals() or var in locals()
 
+def do_you_want_to_continue(message: str) -> bool:
 
-def subparser_api(args):
+	message += ' Do you want to continue? (Y/n)'
+	print(message, end=' ')
+	response = input()
+	return str.lower(response) == 'y'
 
-	if args.newkey:
+def subparser_apikey_func(args):
 
-		print('Your new api key will overwrite previous api key. There will be no return. Do you want to continue? (Y/n)')
-		go_on = input()
+	if args.newvalue:
 
-		if str.lower(go_on) == 'y':
-			api_key = args.newkey
-			g_initilizer.save_api_key(api_key)
+		message = 'Your new api key will overwrite previous api key. There will be no return.'
+		if do_you_want_to_continue(message):
+			api_key = args.newvalue
+			initilizer.save_api_key(api_key)
+		
+def subparser_mysql_func(args):
 
-		else:
-			return
-	
+	if args.create:
+
+		message = 'Do you want to create a MySQL database? If database already exists, this step will have no effect.'
+		if do_you_want_to_continue(message):
+			print('Enter your database username: ', end=' ')
+			db_username = input()
+			print('When it asks for password, it\'s your database login password. OpenWeather doesn\'t store this password for security reasons.')
+			DBConnection().executeSqlFile(db_username)
+
 
 
 def main():
@@ -54,7 +67,6 @@ def main():
 	logMe = LogMe()
 
 	try:
-
 		i = 0
 		k = 0
 		index = 0
@@ -70,9 +82,13 @@ def main():
 		
 		subparsers = global_parser.add_subparsers(title="subcommands")
 
-		api_parser = subparsers.add_parser("api", help="api operations")
-		api_parser.add_argument('-n', '--newkey')
-		api_parser.set_defaults(func=subparser_api)
+		api_parser = subparsers.add_parser("apikey", help="Api Key Operations")
+		api_parser.add_argument('-n', '--newvalue')
+		api_parser.set_defaults(func=subparser_apikey_func)
+
+		mysql_parser = subparsers.add_parser("db", help="Database Operations")
+		mysql_parser.add_argument('-c', '--create', action="store_true")
+		mysql_parser.set_defaults(func=subparser_mysql_func)
 
 		args = global_parser.parse_args()
 
@@ -84,7 +100,7 @@ def main():
 
 		
 		try :
-			api_key = g_initilizer.load_api_key()
+			api_key = initilizer.load_api_key()
 		except ApiKeyNotFoundError as apikeyerror:
 			print('Api Key not found! Please register your Api Key.\ne.g. $ openweather api --newkey yourapikey')
 			return
@@ -94,20 +110,8 @@ def main():
 
 	
 
-		'''
-		İLK ÇALIŞTIRMA
-		1. User'a kendi API key'ini sorsun. (API_KEY bir dosyada tek yönlü kullanıcı şifresi ile şifrelenmiş tutulsun.)
-		2. MySQL veritabanı kurmasının istenip istenilmediği sorulsun.
-		3. Çıktıyı komut satırına (stdout), txt veyas json dosyasına isteyip istemediği sorulsun.
-		
-		ÇALIŞ
-		1. Şehrin o anki weatherdata bilgilerini indirip stdout'a yazsın.
-		2. Günlük kaç server query atıldığı hakkında datetime'ları ile bir flag ya da subcommand ile ile bilgilendirilsin. ex. openweather log gibi
-		3. Komut satırından argüman olarak girilen şehirlerin openweather_id'leri döndürülsün.
-		4. openweather_id ile group query atılsın.
-		5. Veritabanı yaratılmışsa herhangi bir şehrin istenen datetime bilgilerindeki WeatherData'sı döndürülsün.
-		'''
-		return
+		if True:
+			return
 		
 		
 
