@@ -55,12 +55,18 @@ class LogMe:
 
 	def __init__(self):
 
+		init_dir = os.path.join(os.getcwd(), '.init')
+		if not os.path.exists(init_dir):
+			return 
+
 		self.logs = []
+		self.logMe = LogMe()
 
+		config_path = os.path.join(init_dir, 'config.ini')
 		config = ConfigParser()
-		config.read('serviceconfig.ini')
-
+		config.read(config_path)
 		self.log_dir = config.get('Directories', 'LogDirectory')
+
 		self.filename = f'{datetime.now().strftime("%Y.%m.%d")}_openweather.log'	# %Y.%m.%d %H%M%S
 		self.logfile = os.path.join(self.log_dir, self.filename)
 

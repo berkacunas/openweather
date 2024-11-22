@@ -1,2 +1,2 @@
-OpenWeather Service Module in development.
+OpenWeather Service Module.
 In Development.
