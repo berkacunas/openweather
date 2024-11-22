@@ -1,0 +1,6 @@
+[project]
+name = "openweather"
+version = "0.4.3"
+description = "OpenWeather Server and Data Management Module"
+readme = "README.md"
+authors = [{ name = "Berk Acunaş", email = "info@berkacunas.com" }]
