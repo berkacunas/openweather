@@ -14,8 +14,6 @@ class OpenWeatherServer:
 
 	def __init__(self, api_key):
 		
-		
-		self.url = None
 		self.config = ConfigParser()
 		self.config.read('serviceconfig.ini')
 		self.api_key = api_key 			# self.config.get('Keys', 'ApiKey')
@@ -24,7 +22,7 @@ class OpenWeatherServer:
 	def get_response(self, city_name, units='metric'):
 
 		url = self.prepare_query_url(city_name)
-		response = requests.get(self.url)
+		response = requests.get(url)
 
 		return (response, url)
 

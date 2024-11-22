@@ -169,8 +169,6 @@ class WeatherDataCRUD:
 
 	def select(self, id) -> WeatherData:
 
-		weather_datas = []
-
 		try:
 			conn = self.dbConn.createMySQLConnection()
 			cur = conn.cursor()

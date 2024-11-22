@@ -83,15 +83,6 @@ class Initializer:
 			print(error_message('ServiceOptions.create_raw_data_dir_if_not_exists(self)', error))
 			self.logMe.write(error_message('ServiceOptions.create_raw_data_dir_if_not_exists(self)', error))
 
-	@staticmethod
-	def get_hostname() -> str:
-
-		cmd = 'hostname'
-		process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
-		output, error = process.communicate()
-
-		return output.decode('UTF-8').replace('\n', '')
-	
 	def load_secret_key(self) -> str:
 		'''Load the secret key for CryptoSymmetric encryption, if secret key is
 		previously generated. If not, generate the secret key, save into a 
