@@ -1,4 +1,5 @@
-mysql-connector-python
 requests
+mysql-connector-python
+python-dateutil
 cryptography
 python-dateutil

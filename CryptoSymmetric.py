@@ -1,10 +1,4 @@
 from cryptography.fernet import Fernet
-from configparser import ConfigParser
-
-config = ConfigParser()
-config.read('config.ini')
-
-secret_key_path = config.get('Paths', 'SecretKeyFile')
 
 def generate_key():
 
