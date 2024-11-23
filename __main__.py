@@ -62,7 +62,7 @@ def subparser_apikey_func(args):
 
 	if args.newvalue:
 
-		message = 'Your new api key will overwrite previous api key. There will be no return.'
+		message = 'Your new api key will be overwritten your previous api key. There will be no return.'
 		if do_you_want_to_continue(message):
 			api_key = args.newvalue
 			initilizer.save_api_key(api_key)
