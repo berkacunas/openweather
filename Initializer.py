@@ -41,7 +41,6 @@ class Initializer:
 		self.config.read(self.config_path)
 
 		self.config.add_section('Directories')
-
 		self.config.add_section('Application')
 		self.config.add_section('Paths')
 		self.config.add_section('Flags')
@@ -52,7 +51,6 @@ class Initializer:
 		self.config.add_section('Data')
 		self.config.add_section('Settings')
 		self.config.add_section('Units')
-
 		self.config.set('Directories', 'RootDirectory', self.cwd)
 		self.config.set('Directories', 'InitDirectory', self.init_dir)
 		self.config.set('Directories', 'DataDirectory', os.path.join(self.cwd, 'data'))

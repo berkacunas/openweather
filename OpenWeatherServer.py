@@ -1,5 +1,5 @@
 from datetime import datetime
-from configparser import ConfigParser
+from ConfigParserWrapper import ConfigParserWrapper
 import requests
 
 class OpenWeatherData:
@@ -14,10 +14,8 @@ class OpenWeatherServer:
 
 	def __init__(self, api_key):
 		
-		self.config = ConfigParser()
-		self.config.read('serviceconfig.ini')
-		self.api_key = api_key 			# self.config.get('Keys', 'ApiKey')
-		self.base_url = self.config.get('OpenWeather.Server', 'Url')
+		config_wrapper = ConfigParserWrapper()
+		self.base_url = config_wrapper.get('OpenWeather.Server', 'Url')
 
 	def get_response(self, city_name, units='metric'):
 

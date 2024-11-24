@@ -9,10 +9,11 @@
 '''
 import os
 from datetime import datetime
-from configparser import ConfigParser
+from ConfigParserWrapper import ConfigParserWrapper
 import math
 import argparse
 
+from Initializer import Initializer
 from OpenWeatherServer import OpenWeatherServer
 from OpenWeatherLogger import OpenWeatherLogger
 from OpenWeatherException import ApiKeyNotFoundError
@@ -21,13 +22,15 @@ from WeatherDataParser import WeatherDataParser
 from City import City
 from MySQLConnection import DBConnection
 from LogMe import LogMe, info_message, error_message
-from Initializer import Initializer
 
-# Global variables
+# Global variables, definitions
 cwd = os.getcwd()
-initilizer = Initializer(cwd)
-config = ConfigParser()
 init_dir = os.path.join(cwd, '.init')
+
+
+initilizer = Initializer(cwd)
+config_wrapper = ConfigParserWrapper()
+
 
 def do_you_want_to_continue(message: str) -> bool:
 
@@ -59,7 +62,7 @@ def subparser_apikey_func(args):
 
 	if args.newvalue:
 
-		message = 'Your new api key will overwrite previous api key. There will be no return.'
+		message = 'Your new api key will be overwritten your previous api key. There will be no return.'
 		if do_you_want_to_continue(message):
 			api_key = args.newvalue
 			initilizer.save_api_key(api_key)
@@ -87,23 +90,21 @@ def subparser_db_func(args):
 
 		message = 'Do you want to activate MySQL database?'
 		if do_you_want_to_continue(message):
-			config.set('Database.Online', 'Activated', 'True')
-			with open('config.ini', "w") as f:
-				config.write(f)
+			config_wrapper.set('Database.Online', 'Activated', 'True')
+			config_wrapper.write()
 	
 	if args.deactivate:
 
 		message = 'Do you want to deactivate MySQL database?'
 		if do_you_want_to_continue(message):
-			config.set('Database.Online', 'Activated', 'False')
-			with open('config.ini', "w") as f:
-				config.write(f)
+			config_wrapper.set('Database.Online', 'Activated', 'False')
+			config_wrapper.write()
 				
 
 def main():
 
 	global_parser = argparse.ArgumentParser(prog='openweather', 
-								   		 description='OpenWeather Server and Data Management Module',
+											description='OpenWeather Server and Data Management Module',
 										 epilog='Thanks for using %(prog)s!')
 		
 	global_parser.add_argument('-d', '--daemon', action="store_true", help='Run as daemon')
@@ -147,7 +148,6 @@ def main():
 	print(f'Started at {start_time}')
 
 	cities = None
-	config.read(os.path.join(cwd, '.init', 'config.ini'))
 	logMe = LogMe()
 
 	try:

@@ -60,7 +60,6 @@ class LogMe:
 			return 
 
 		self.logs = []
-		self.logMe = LogMe()
 
 		config_path = os.path.join(init_dir, 'config.ini')
 		config = ConfigParser()
