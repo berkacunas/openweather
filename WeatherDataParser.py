@@ -1,4 +1,4 @@
-from configparser import ConfigParser
+from ConfigParserWrapper import ConfigParserWrapper
 import json
 
 from datetime import datetime
@@ -11,10 +11,10 @@ class WeatherDataParser:
 
 	def __init__(self):
 
-		self.config = ConfigParser()
-		self.config.read('serviceconfig.ini')
+		self.config_wrapper = ConfigParserWrapper()
+		self.logMe = LogMe()
 
-		city_conflicts_file = self.config.get('Data', 'CityConflictsJsonFile')
+		city_conflicts_file = self.config_wrapper.get('Data', 'CityConflictsJsonFile')
 
 		with open(city_conflicts_file) as f:
 			self.city_conflicts = json.load(f)
@@ -54,7 +54,7 @@ class WeatherDataParser:
 				city_name = data["name"]
 
 			weatherData.city_id = City().get_id_by_name(city_name)
-			if weatherData.city_id == -1:
+			if (weatherData.city_id == -1) or (weatherData.city_id == None):
 				raise CityNotFoundError()
 			
 			weatherData.longitude = float(coord["lon"])
@@ -63,7 +63,7 @@ class WeatherDataParser:
 			weatherData.weather_type = weather[0]["main"]
 			weatherData.icon = weather[0]["icon"]
 
-			celcius_kelvin_diff = self.config.getfloat('Units', 'KelvinToCelcius')
+			celcius_kelvin_diff = self.config_wrapper.getfloat('Units', 'KelvinToCelcius')
 
 			if is_kelvin_to_celcius:
 				weatherData.temperature = float(main["temp"]) - celcius_kelvin_diff
@@ -107,7 +107,7 @@ class WeatherDataParser:
 
 		except Exception as error:
 			print(error_message('WeatherDataParser.parse()', error))
-			self.g_Options.logMe.logs.append(error_message('WeatherDataParser.parse()', error))
+			self.logMe.write(error_message('WeatherDataParser.parse()', error))
 
 		return weatherData
 	

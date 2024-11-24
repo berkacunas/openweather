@@ -14,6 +14,7 @@ class OpenWeatherServer:
 
 	def __init__(self, api_key):
 		
+		self.api_key = api_key
 		config_wrapper = ConfigParserWrapper()
 		self.base_url = config_wrapper.get('OpenWeather.Server', 'Url')
 

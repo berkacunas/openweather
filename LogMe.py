@@ -10,10 +10,10 @@
 import os
 import sys
 from datetime import datetime
-from configparser import ConfigParser
 from collections import namedtuple
 import copy
 
+from ConfigParserWrapper import ConfigParserWrapper
 from OpenWeatherException import LoggingFileError
 
 FrameInfo = namedtuple('FrameInfo', ['filename', 'lineno', 'function', 'parameters'])
@@ -61,10 +61,8 @@ class LogMe:
 
 		self.logs = []
 
-		config_path = os.path.join(init_dir, 'config.ini')
-		config = ConfigParser()
-		config.read(config_path)
-		self.log_dir = config.get('Directories', 'LogDirectory')
+		config_wrapper = ConfigParserWrapper()
+		self.log_dir = config_wrapper.get('Directories', 'LogDirectory')
 
 		self.filename = f'{datetime.now().strftime("%Y.%m.%d")}_openweather.log'	# %Y.%m.%d %H%M%S
 		self.logfile = os.path.join(self.log_dir, self.filename)

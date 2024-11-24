@@ -2,7 +2,7 @@
 venv/
 .venv/
 __pycache__/
-log_pc-mintcinnamon/
+log/
 api.key
 secret.key
 todo.txt

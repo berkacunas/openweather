@@ -27,7 +27,6 @@ from LogMe import LogMe, info_message, error_message
 cwd = os.getcwd()
 init_dir = os.path.join(cwd, '.init')
 
-
 initilizer = Initializer(cwd)
 config_wrapper = ConfigParserWrapper()
 
@@ -86,18 +85,18 @@ def subparser_db_func(args):
 			print('When it asks for password, it\'s your database login password. OpenWeather doesn\'t store this password for security reasons.')
 			DBConnection().executeSqlFile(db_username)
 
-	if args.activate:
+	if args.enable:
 
-		message = 'Do you want to activate MySQL database?'
+		message = 'Do you want to enable MySQL database?'
 		if do_you_want_to_continue(message):
-			config_wrapper.set('Database.Online', 'Activated', 'True')
+			config_wrapper.set('Database.Online', 'Enabled', 'True')
 			config_wrapper.write()
 	
-	if args.deactivate:
+	if args.disable:
 
-		message = 'Do you want to deactivate MySQL database?'
+		message = 'Do you want to disable MySQL database?'
 		if do_you_want_to_continue(message):
-			config_wrapper.set('Database.Online', 'Activated', 'False')
+			config_wrapper.set('Database.Online', 'Enabled', 'False')
 			config_wrapper.write()
 				
 
@@ -125,8 +124,8 @@ def main():
 
 	db_parser = subparsers.add_parser('db', help='Database Operations')
 	db_parser.add_argument('-c', '--create', action='store_true')
-	db_parser.add_argument('-a', '--activate', action='store_true')
-	db_parser.add_argument('-d', '--deactivate', action='store_true')
+	db_parser.add_argument('-e', '--enable', action='store_true')
+	db_parser.add_argument('-d', '--disable', action='store_true')
 
 	db_parser.set_defaults(func=subparser_db_func)
 
@@ -164,84 +163,85 @@ def main():
 			
 		ows = OpenWeatherServer(api_key)
 
-	
+		city = City()	
 
-		if True:
-			return
-		
-		
-
-		city = City()
-		openweather_ids = city.get_all_openweather_ids()
-
-		max_query_limit = config.getint('Settings', 'MaxGroupQueryLimit')
-		loop_count = math.ceil(len(openweather_ids) /  max_query_limit)
-		
-		rows = []
-		query_ids = []
-		query_token = ''
-
-		for i in range(loop_count):
+		if initilizer.is_daemon:
 			
-			for k in range(max_query_limit):
+			openweather_ids = city.get_all_openweather_ids()
 
-				if index == len(openweather_ids):
-					break
-
-				query_ids.append(str(openweather_ids[index]))
-				index += 1
+			max_query_limit = config_wrapper.getint('Settings', 'MaxGroupQueryLimit')
+			loop_count = math.ceil(len(openweather_ids) /  max_query_limit)
 			
-			if len(query_ids) > 0:
-				query_token = ''
-				query_token = ','.join(query_ids)[:-1]
+			rows = []
+			query_ids = []
+			query_token = ''
 
-				openweatherdata = ows.get_group_openweatherdata(query_token)
-				datalist = openweatherdata.json
+			for i in range(loop_count):
+				
+				for k in range(max_query_limit):
 
-				first_data_dt = int(datalist['list'][0]["dt"])
+					if index == len(openweather_ids):
+						break
 
-				logger = OpenWeatherLogger()
-				logger.mark(first_data_dt, openweatherdata.url, openweatherdata.query_time)
-				logger_id = logger.add()				
+					query_ids.append(str(openweather_ids[index]))
+					index += 1
+				
+				if len(query_ids) > 0:
+					query_token = ''
+					query_token = ','.join(query_ids)[:-1]
 
-				for data in datalist['list']:
-					try:
-						parser = WeatherDataParser()
-						weatherData = parser.parse(data, is_kelvin_to_celcius=True)
-						weatherData.logger_id = logger_id
+					openweatherdata = ows.get_group_openweatherdata(query_token)
+					datalist = openweatherdata.json
 
-						if not weatherData.is_exists():
-							rows.append(weatherData.to_list())
+					first_data_dt = int(datalist['list'][0]["dt"])
 
-					except Exception as error:
-						print(error_message('main()::under \'for data in datalist[\'list\']:\'', error))
-						logMe.write(error_message('main()::under \'for data in datalist[\'list\']:\'', error))
+					logger = OpenWeatherLogger()
+					logger.mark(first_data_dt, openweatherdata.url, openweatherdata.query_time)
+					logger_id = logger.add()				
 
-				query_ids.clear()
-				k = 0
+					for data in datalist['list']:
+						try:
+							parser = WeatherDataParser()
+							weatherData = parser.parse(data, is_kelvin_to_celcius=True)
+							weatherData.logger_id = logger_id
 
-		try:
-			if len(rows) > 0:
-				weatherData.add_all(rows)
+							if not weatherData.is_exists():
+								if not weatherData.city_id:
+									print(error_message('main()::under \'for data in datalist[\'list\']:\'', f'Cannot download data of city openweather id: {openweather_ids[index]}. Skipped.'))
+									logMe.write(error_message('main()::under \'for data in datalist[\'list\']:\'', f'Cannot download data of city openweather id: {openweather_ids[index]}. Skipped.'))
+								else:
+									rows.append(weatherData.to_list())
 
-				print(info_message('main()', f'{len(rows)} records successfull added to database.'))
-				logMe.write(info_message('main()', f'{len(rows)} records successfull added to database.'))
+						except Exception as error:
+							print(error_message('main()::under \'for data in datalist[\'list\']:\'', error))
+							logMe.write(error_message('main()::under \'for data in datalist[\'list\']:\'', error))
 
-		except Exception as mysql_error:
-			print(error_message('main()::under \'weatherData.add_all(rows)\'', error))
-			logMe.write(error_message('main()::under \'weatherData.add_all(rows)\'', error))
+					query_ids.clear()
+					k = 0
 
-		end_time = datetime.now()
+			try:
+				if len(rows) > 0:
+					weatherData.add_all(rows)
 
-		service_uptime = end_time - start_time
-		service_complete_log = f'Queries completed successfully in {service_uptime}'
+					print(info_message('main()', f'{len(rows)} records successfull added to database.'))
+					logMe.write(info_message('main()', f'{len(rows)} records successfull added to database.'))
 
-		print(info_message('main()', service_complete_log))
-		logMe.write(info_message('main()', service_complete_log))
+			except Exception as mysql_error:
+				print(error_message('main()::under \'weatherData.add_all(rows)\'', error))
+				logMe.write(error_message('main()::under \'weatherData.add_all(rows)\'', error))
+
+			end_time = datetime.now()
+
+			service_uptime = end_time - start_time
+			service_complete_log = f'Queries completed successfully in {service_uptime}'
+
+			print(info_message('main()', service_complete_log))
+			logMe.write(info_message('main()', service_complete_log))
 
 	except Exception as error:
 		print(error_message('main():: main block error', error))
 		logMe.write(error_message('main():: main block error', error))
+
 
 
 

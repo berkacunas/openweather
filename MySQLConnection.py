@@ -1,6 +1,6 @@
 import mysql.connector
 from subprocess import Popen, run, PIPE
-from configparser import ConfigParser
+from ConfigParserWrapper import ConfigParserWrapper
 
 from LogMe import LogMe, info_message, error_message, frame_info, print_frame_info
 
@@ -18,18 +18,15 @@ class DBConnection:
 
 	def __init__(self) -> None:
 
-		config = ConfigParser()
-		config.read('serviceconfig.ini')
-
+		config_wrapper = ConfigParserWrapper()
 		self.logMe = LogMe()
 
 		self.db_conn_parameter = DbConnParameter()
-		self.db_conn_parameter.host = config.get('Database.MySQL', 'Host')
-		self.db_conn_parameter.database = config.get('Database.MySQL', 'DbName')
-		self.db_conn_parameter.user = config.get('Database.MySQL', 'Username')
-		self.db_conn_parameter.password = config.get('Database.MySQL', 'Password')
-
-		self.db_schema_path = config.get('Paths', 'DbSchemaFile')
+		self.db_conn_parameter.host = config_wrapper.get('Database.MySQL', 'Host')
+		self.db_conn_parameter.database = config_wrapper.get('Database.MySQL', 'DbName')
+		self.db_conn_parameter.user = config_wrapper.get('Database.MySQL', 'Username')
+		self.db_conn_parameter.password = config_wrapper.get('Database.MySQL', 'Password')
+		self.db_schema_path = config_wrapper.get('Paths', 'DbSchemaFile')
 
 	def createMySQLConnection(self):
 
