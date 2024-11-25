@@ -9,18 +9,18 @@
 '''
 import os
 from datetime import datetime
-from ConfigParserWrapper import ConfigParserWrapper
 import math
 import argparse
 
 from Initializer import Initializer
+from ConfigParserWrapper import ConfigParserWrapper
 from OpenWeatherServer import OpenWeatherServer
 from OpenWeatherLogger import OpenWeatherLogger
 from OpenWeatherException import ApiKeyNotFoundError
 from WeatherData import WeatherData
 from WeatherDataParser import WeatherDataParser
 from City import City
-from MySQLConnection import DBConnection
+from MySQLConnection import DBConnection, DbCreator
 from LogMe import LogMe, info_message, error_message
 
 # Global variables, definitions
@@ -72,18 +72,30 @@ def subparser_apikey_func(args):
 			print(f'Api Key: {api_key}')
 
 		except ApiKeyNotFoundError as error:
-			print('Api Key not found !')
+			raise
 		
 def subparser_db_func(args):
+
+	if args.set_credentials:
+
+		print('Enter your host name: ', end=' ')
+		host = input()
+		print('Enter your database name: ', end=' ')
+		database = input()
+		print('Enter your username: ', end=' ')
+		username = input()
+		print('Enter your password: ', end=' ')
+		password = input()
+
+		DbCreator().createUserLogin(host, database, username, password)
 
 	if args.create:
 
 		message = 'Do you want to create a MySQL database? If database already exists, this step will have no effect.'
 		if do_you_want_to_continue(message):
-			print('Enter your database username: ', end=' ')
-			db_username = input()
-			print('When it asks for password, it\'s your database login password. OpenWeather doesn\'t store this password for security reasons.')
-			DBConnection().executeSqlFile(db_username)
+
+			print('When it asks for password, please enter your database user password.')
+			DbCreator().executeSqlFile()
 
 	if args.enable:
 
@@ -101,6 +113,8 @@ def subparser_db_func(args):
 				
 
 def main():
+
+	logMe = LogMe()
 
 	global_parser = argparse.ArgumentParser(prog='openweather', 
 											description='OpenWeather Server and Data Management Module',
@@ -123,10 +137,10 @@ def main():
 	api_parser.set_defaults(func=subparser_apikey_func)
 
 	db_parser = subparsers.add_parser('db', help='Database Operations')
+	db_parser.add_argument('-s', '--set-credentials', action='store_true')
 	db_parser.add_argument('-c', '--create', action='store_true')
 	db_parser.add_argument('-e', '--enable', action='store_true')
 	db_parser.add_argument('-d', '--disable', action='store_true')
-
 	db_parser.set_defaults(func=subparser_db_func)
 
 	args = global_parser.parse_args()
@@ -134,35 +148,42 @@ def main():
 	try:
 		if args.func:
 			args.func(args)
-	except AttributeError as error:
-		print(error)
+			return
+
+	except AttributeError as attributeError:
+		print(error_message('main()::args.func(args)', attributeError))
+		logMe.write(error_message('main()::args.func(args)', attributeError))
 		pass
+
+	except ApiKeyNotFoundError as apiKeyNotFoundError:
+		print(error_message('main()::args.func(args)', apiKeyNotFoundError))
+		logMe.write(error_message('main()::args.func(args)', apiKeyNotFoundError))
+		return
 	
 	if not os.path.exists(init_dir):
 		print('You should initialize OpenWeather before start using it.\ne.g. $ openweather init')
 		return
 
-	
-	start_time = datetime.now()
-	print(f'Started at {start_time}')
-
-	cities = None
-	logMe = LogMe()
 
 	try:
-		i = 0
-		k = 0
-		index = 0
+		
 		api_key = None
 		
 		try :
 			api_key = initializer.load_api_key()
 		except ApiKeyNotFoundError as apikeyerror:
-			print('Api Key not found! Please register your Api Key.\ne.g. $ openweather api --newkey yourapikey')
+			print('Api Key not found! Please register your Api Key.\ne.g. $ openweather apikey --newvalue yourapikey')
 			return
-			
-		ows = OpenWeatherServer(api_key)
+		
 
+		i = 0
+		k = 0
+		index = 0
+
+		start_time = datetime.now()
+		print(f'Started at {start_time}')
+
+		ows = OpenWeatherServer(api_key)
 		city = City()	
 
 		if initializer.is_daemon:

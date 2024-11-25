@@ -18,15 +18,18 @@ class DBConnection:
 
 	def __init__(self) -> None:
 
-		config_wrapper = ConfigParserWrapper()
+		self.config_wrapper = ConfigParserWrapper()
 		self.logMe = LogMe()
 
+		self.setCredentials()
+
+	def setCredentials(self):
+
 		self.db_conn_parameter = DbConnParameter()
-		self.db_conn_parameter.host = config_wrapper.get('Database.MySQL', 'Host')
-		self.db_conn_parameter.database = config_wrapper.get('Database.MySQL', 'DbName')
-		self.db_conn_parameter.user = config_wrapper.get('Database.MySQL', 'Username')
-		self.db_conn_parameter.password = config_wrapper.get('Database.MySQL', 'Password')
-		self.db_schema_path = config_wrapper.get('Paths', 'DbSchemaFile')
+		self.db_conn_parameter.host = self.config_wrapper.get('Database.MySQL', 'Host')
+		self.db_conn_parameter.database = self.config_wrapper.get('Database.MySQL', 'DbName')
+		self.db_conn_parameter.user = self.config_wrapper.get('Database.MySQL', 'Username')
+		self.db_conn_parameter.password = self.config_wrapper.get('Database.MySQL', 'Password')
 
 	def createMySQLConnection(self):
 
@@ -49,47 +52,38 @@ class DBConnection:
 			if conn:
 				conn.close
 
-	def isDatabaseExists(self, db_name):
+class DbCreator:
 
-		conn = None
+	def __init__(self):
+		
+		self.config_wrapper = ConfigParserWrapper()
+		self.logMe = LogMe()
 
-		try:
-			conn = self.createMySQLConnection()
-			curr = conn.cursor()
+		self.db_conn_parameter = DbConnParameter()
+		self.db_conn_parameter.host = self.config_wrapper.get('Database.MySQL', 'Host')
+		self.db_conn_parameter.database = self.config_wrapper.get('Database.MySQL', 'DbName')
+		self.db_conn_parameter.user = self.config_wrapper.get('Database.MySQL', 'Username')
+		self.db_conn_parameter.password = self.config_wrapper.get('Database.MySQL', 'Password')
 
-			sql = 'SHOW DATABASES;'
+		self.db_schema_path = self.config_wrapper.get('Paths', 'DbSchemaFile')
 
-			curr.execute(sql)
-			rows = curr.fetchall()
+	def createUserLogin(self, host, database, user, password):
 
-			if rows:
-				print(info_message('DBConnection::isDatabaseExists()', 'Checked database exists.'))
-				self.logMe.write(info_message('DBConnection::isDatabaseExists()', 'Checked database exists.'))
-
-				for row in rows:
-					if db_name == row[0]:
-						return True
-					
-			return False
-
-		except Exception as error:
-			print(error_message('DBConnection::isDatabaseExists()', error))
-			self.logMe.write(error_message('DBConnection::isDatabaseExists()', error))
-
-
-
-	def executeSqlFile(self, db_username=None):
-
-		if not db_username:
-			db_username = self.db_conn_parameter.user
+		self.config_wrapper.set('Database.MySQL', 'Host', host)
+		self.config_wrapper.set('Database.MySQL', 'DbName', database)
+		self.config_wrapper.set('Database.MySQL', 'Username', user)
+		self.config_wrapper.set('Database.MySQL', 'Password', password)
+		self.config_wrapper.write()
+	
+	def executeSqlFile(self):
 
 		try:
-			run(f"mysql -u {db_username} -p {self.db_conn_parameter.database} < {self.db_schema_path}", shell=True)
+			run(f"mysql -u {self.db_conn_parameter.user} -p {self.db_conn_parameter.database} < {self.db_schema_path}", shell=True)
 
-			print(info_message('DBConnection::executeSqlFile()', 'MySQL OpenWeather created.'))
-			self.logMe.write(info_message('DBConnection::executeSqlFile()', 'MySQL OpenWeather created.'))
+			print(info_message('DbCreator::executeSqlFile()', 'MySQL OpenWeather created.'))
+			self.logMe.write(info_message('DbCreator::executeSqlFile()', 'MySQL OpenWeather created.'))
 
 		except Exception as error:
-			print(error_message('DBConnection::executeSqlFile()', error))
-			self.logMe.write(error_message('DBConnection::executeSqlFile()', error))
+			print(error_message('DbCreator::executeSqlFile()', error))
+			self.logMe.write(error_message('DbCreator::executeSqlFile()', error))
 	
