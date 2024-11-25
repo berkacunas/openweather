@@ -27,7 +27,7 @@ from LogMe import LogMe, info_message, error_message
 cwd = os.getcwd()
 init_dir = os.path.join(cwd, '.init')
 
-initilizer = Initializer(cwd)
+initializer = Initializer(cwd)
 config_wrapper = ConfigParserWrapper()
 
 
@@ -41,7 +41,7 @@ def do_you_want_to_continue(message: str) -> bool:
 def global_parser_func(args):
 
 	if args.daemon:
-		initilizer.add_cron_job()
+		initializer.add_cron_job()
 
 def subparser_init_parser_func(args):
 	
@@ -51,7 +51,7 @@ def subparser_init_parser_func(args):
 		print('OpenWeather has already initialized before.')
 		return
 	
-	initilizer.init(cwd)
+	initializer.init(cwd)
 
 def subparser_status_parser_func(args):
 
@@ -64,11 +64,11 @@ def subparser_apikey_func(args):
 		message = 'Your new api key will be overwritten your previous api key. There will be no return.'
 		if do_you_want_to_continue(message):
 			api_key = args.newvalue
-			initilizer.save_api_key(api_key)
+			initializer.save_api_key(api_key)
 
 	if args.print:
 		try:
-			api_key = initilizer.load_api_key()
+			api_key = initializer.load_api_key()
 			print(f'Api Key: {api_key}')
 
 		except ApiKeyNotFoundError as error:
@@ -89,14 +89,14 @@ def subparser_db_func(args):
 
 		message = 'Do you want to enable MySQL database?'
 		if do_you_want_to_continue(message):
-			config_wrapper.set('Database.Online', 'Enabled', 'True')
+			config_wrapper.set('Database', 'Enabled', 'True')
 			config_wrapper.write()
 	
 	if args.disable:
 
 		message = 'Do you want to disable MySQL database?'
 		if do_you_want_to_continue(message):
-			config_wrapper.set('Database.Online', 'Enabled', 'False')
+			config_wrapper.set('Database', 'Enabled', 'False')
 			config_wrapper.write()
 				
 
@@ -156,7 +156,7 @@ def main():
 		api_key = None
 		
 		try :
-			api_key = initilizer.load_api_key()
+			api_key = initializer.load_api_key()
 		except ApiKeyNotFoundError as apikeyerror:
 			print('Api Key not found! Please register your Api Key.\ne.g. $ openweather api --newkey yourapikey')
 			return
@@ -165,7 +165,7 @@ def main():
 
 		city = City()	
 
-		if initilizer.is_daemon:
+		if initializer.is_daemon:
 			
 			openweather_ids = city.get_all_openweather_ids()
 
