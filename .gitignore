@@ -6,4 +6,4 @@ log/
 api.key
 secret.key
 todo.txt
-.init/config.ini
+.init/
