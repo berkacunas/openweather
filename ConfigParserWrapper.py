@@ -7,13 +7,14 @@ class ConfigParserWrapper:
 		
 		cwd = os.getcwd()
 		init_dir = os.path.join(cwd, '.init')
-		self.config_path = os.path.join(init_dir, 'config.ini')
+		self.config_path = os.path.join(init_dir, 'settings.cfg')
 
 		if (os.path.exists(init_dir)) and (not os.path.isfile(self.config_path)):
 			with open(self.config_path, 'x') as f:
 				f.close()
 		
 		self.config = ConfigParser()
+		self.config.optionxform = str		# disable make capital keys lower case.
 		self.config.read(self.config_path)
 		
 	def get(self, section: str, option: str) -> str:

@@ -1,9 +1,6 @@
-.vscode/
-venv/
-.venv/
-__pycache__/
-log/
-api.key
-secret.key
-todo.txt
 .init/
+.vscode/
+__pycache__/
+data/secret.key
+log/
+todo.txt

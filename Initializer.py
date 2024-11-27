@@ -62,10 +62,12 @@ class Initializer:
 		self.config_wrapper.set('OpenWeather.Resources.Json', 'CurrentCityList', os.path.join(self.cwd, 'resources', 'current.city.list.json'))
 		self.config_wrapper.set('Database', 'Created', 'False')
 		self.config_wrapper.set('Database', 'Enabled', 'False')
-		self.config_wrapper.set('Database.MySQL', 'Host', 'localhost')
-		self.config_wrapper.set('Database.MySQL', 'DbName', 'OpenWeather')
-		self.config_wrapper.set('Database.MySQL', 'Username', 'barishuan')
-		self.config_wrapper.set('Database.MySQL', 'Password', 'xHV.H|3<P~')
+		self.config_wrapper.set('Database.MySQL', 'Host', '')
+		self.config_wrapper.set('Database.MySQL', 'DbName', '')
+		self.config_wrapper.set('Database.MySQL', 'Username', '')
+		self.config_wrapper.set('Database.MySQL', 'Password', '')
+		self.config_wrapper.set('Database.MySQL', 'Port', '')
+		self.config_wrapper.set('Data', 'ApiKey', '')
 		self.config_wrapper.set('Data', 'CityConflictsJsonFile', os.path.join(self.cwd, 'data', 'CityNameConflicts.json'))
 		self.config_wrapper.set('Settings', 'MaxGroupQueryLimit', '20')
 		self.config_wrapper.set('Settings', 'UserTimezone', str(self.get_timezone_diff()))
@@ -167,16 +169,12 @@ class Initializer:
 
 	def load_api_key(self) -> str:
 
-		api_key = None
-
-		if not os.path.isfile(self.api_key_path):
-			raise ApiKeyNotFoundError()
+		encrypted_api_key = self.config_wrapper.get('Data', 'ApiKey')
+		if len(encrypted_api_key) == 0:
+			raise ApiKeyNotFoundError('Api key not found.')
 		
 		secret_key = self.load_secret_key()
-
-		with open(self.api_key_path, 'rb') as f:
-			decrypted_api_key = f.read()
-			api_key = CryptoSymmetric.decrypt_message(decrypted_api_key, secret_key)
+		api_key = CryptoSymmetric.decrypt_message(encrypted_api_key, secret_key)
 
 		return api_key
 	
@@ -184,9 +182,10 @@ class Initializer:
 
 		secret_key = self.load_secret_key()
 		encrypted_api_key = CryptoSymmetric.encrypt_message(api_key, secret_key)
+		
+		self.config_wrapper.set('Data', 'ApiKey', encrypted_api_key.decode('UTF-8'))
+		self.config_wrapper.write()
 
-		with open(self.api_key_path, 'wb') as f:
-			f.write(encrypted_api_key)
 
 	def add_cron_job(self) -> bool:
 
