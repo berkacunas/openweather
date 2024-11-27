@@ -1,7 +1,0 @@
-.vscode/
-.venv/
-.init/
-__pycache__/
-log/
-secret.key
-todo.txt
