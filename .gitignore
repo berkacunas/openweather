@@ -1,7 +1,7 @@
-.init/
 .vscode/
+.venv/
+.init/
 __pycache__/
-data/secret.key
 log/
+secret.key
 todo.txt
-
