@@ -112,12 +112,8 @@ class DbOptions:
 		self.logMe = LogMe()
 
 		self.db_credentials = DbCredentials()
-		self.db_credentials.load()
-
-		self.db_schema_path = self.config_wrapper.get('Paths', 'DbSchemaFile')
-		self.db_schema_backup_path = self.config_wrapper.get('Paths', 'DbSchemaBackupFile')
-
-	def createDatabase(self, database):
+		
+	def createDatabase(self, database: str):
 
 		conn = None
 
@@ -144,7 +140,7 @@ class DbOptions:
 		self.config_wrapper.set('Database', 'Enabled', enable)
 		self.config_wrapper.write()
 
-	def createUser(self, host, database, user, password, port):
+	def createUser(self, host: str, database: str, user: str, password: str, port: int):
 
 		db_credentials = DbCredentials(host, database, user, password, port)
 		db_credentials.save()
@@ -152,7 +148,12 @@ class DbOptions:
 	def executeSqlFile(self):
 
 		try:
-			self.edit_dbname_in_sql_script('OpenWeather', self.db_credentials.database)
+			self.db_schema_path = self.config_wrapper.get('Paths', 'DbSchemaFile')
+			self.db_schema_backup_path = self.config_wrapper.get('Paths', 'DbSchemaBackupFile')
+
+			self.db_credentials.load()
+
+			self._edit_dbname_in_sql_script('OpenWeather', self.db_credentials.database)
 			
 			self.createDatabase(self.db_credentials.database)
 			run(f"mysql -u {self.db_credentials.user} -p {self.db_credentials.database} < {self.db_schema_path}", shell=True)
@@ -167,7 +168,7 @@ class DbOptions:
 			print(error_message('DbOptions::executeSqlFile()', error))
 			self.logMe.write(error_message('DbOptions::executeSqlFile()', error))
 	
-	def edit_dbname_in_sql_script(self, old_name, new_name):
+	def _edit_dbname_in_sql_script(self, old_name: str, new_name: str):
 
 		if not os.path.isfile(self.db_schema_backup_path):
 			shutil.copy2(self.db_schema_path, self.db_schema_backup_path)

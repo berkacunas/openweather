@@ -8,6 +8,7 @@
 # Created on: 2023.05.04
 '''
 import os
+import sys
 from datetime import datetime
 import math
 import argparse
@@ -20,7 +21,7 @@ from OpenWeatherException import ApiKeyNotFoundError
 from WeatherData import WeatherData
 from WeatherDataParser import WeatherDataParser
 from City import City
-from MySQLConnection import DBConnection, DbOptions
+from MySQLConnection import DbOptions
 from LogMe import LogMe, info_message, error_message
 
 # Global variables, definitions
@@ -28,6 +29,7 @@ cwd = os.getcwd()
 init_dir = os.path.join(cwd, '.init')
 
 initializer = Initializer(cwd)
+db_options = DbOptions()
 config_wrapper = ConfigParserWrapper()
 
 
@@ -91,7 +93,7 @@ def subparser_db_func(args):
 		if port == '':
 			port = 3306
 
-		DbOptions().createUser(host, database, username, password, port)
+		db_options.createUser(host, database, username, password, port)
 
 	if args.create:
 
@@ -99,19 +101,19 @@ def subparser_db_func(args):
 		if do_you_want_to_continue(message):
 
 			print('When it asks for password, please enter your database user password.')
-			DbOptions().executeSqlFile()
+			db_options.executeSqlFile()
 
 	if args.enable:
 
 		message = 'Do you want to enable MySQL database?'
 		if do_you_want_to_continue(message):
-			DbOptions().enableDatabase(True)
+			db_options.enableDatabase(True)
 	
 	if args.disable:
 
 		message = 'Do you want to disable MySQL database?'
 		if do_you_want_to_continue(message):
-			DbOptions().enableDatabase(False)
+			db_options.enableDatabase(False)
 				
 
 def main():
@@ -151,6 +153,9 @@ def main():
 
 		if args.func:
 			args.func(args)
+		
+		arg_len = len(sys.argv)
+		if arg_len > 1:
 			return
 
 	except AttributeError as attributeError:
