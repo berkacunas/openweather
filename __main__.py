@@ -20,7 +20,7 @@ from OpenWeatherException import ApiKeyNotFoundError
 from WeatherData import WeatherData
 from WeatherDataParser import WeatherDataParser
 from City import City
-from MySQLConnection import DBConnection, DbCreator
+from MySQLConnection import DBConnection, DbOptions
 from LogMe import LogMe, info_message, error_message
 
 # Global variables, definitions
@@ -86,8 +86,12 @@ def subparser_db_func(args):
 		username = input()
 		print('Enter your password: ', end=' ')
 		password = input()
+		print('Enter port: (Hit enter for default port: 3306)', end= ' ')
+		port = input()
+		if port == '':
+			port = 3306
 
-		DbCreator().createUserLogin(host, database, username, password)
+		DbOptions().createUser(host, database, username, password, port)
 
 	if args.create:
 
@@ -95,21 +99,19 @@ def subparser_db_func(args):
 		if do_you_want_to_continue(message):
 
 			print('When it asks for password, please enter your database user password.')
-			DbCreator().executeSqlFile()
+			DbOptions().executeSqlFile()
 
 	if args.enable:
 
 		message = 'Do you want to enable MySQL database?'
 		if do_you_want_to_continue(message):
-			config_wrapper.set('Database', 'Enabled', 'True')
-			config_wrapper.write()
+			DbOptions().enableDatabase(True)
 	
 	if args.disable:
 
 		message = 'Do you want to disable MySQL database?'
 		if do_you_want_to_continue(message):
-			config_wrapper.set('Database', 'Enabled', 'False')
-			config_wrapper.write()
+			DbOptions().enableDatabase(False)
 				
 
 def main():
@@ -137,15 +139,16 @@ def main():
 	api_parser.set_defaults(func=subparser_apikey_func)
 
 	db_parser = subparsers.add_parser('db', help='Database Operations')
-	db_parser.add_argument('-s', '--set-credentials', action='store_true')
 	db_parser.add_argument('-c', '--create', action='store_true')
 	db_parser.add_argument('-e', '--enable', action='store_true')
 	db_parser.add_argument('-d', '--disable', action='store_true')
+	db_parser.add_argument('-s', '--set-credentials', action='store_true')
 	db_parser.set_defaults(func=subparser_db_func)
 
-	args = global_parser.parse_args()
 
 	try:
+		args = global_parser.parse_args()
+
 		if args.func:
 			args.func(args)
 			return
@@ -158,6 +161,11 @@ def main():
 	except ApiKeyNotFoundError as apiKeyNotFoundError:
 		print(error_message('main()::args.func(args)', apiKeyNotFoundError))
 		logMe.write(error_message('main()::args.func(args)', apiKeyNotFoundError))
+		return
+	
+	except Exception as error:
+		print(error_message('main()::args.func(args)', error))
+		logMe.write(error_message('main()::args.func(args)', error))
 		return
 	
 	if not os.path.exists(init_dir):

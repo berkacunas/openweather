@@ -1,18 +1,72 @@
+import os
+import re
+import shutil
 import mysql.connector
 from subprocess import Popen, run, PIPE
 from ConfigParserWrapper import ConfigParserWrapper
+import CryptoSymmetric
 
 from LogMe import LogMe, info_message, error_message, frame_info, print_frame_info
 
-class DbConnParameter:
+class DbCredentials:
 
-	def __init__(self):
+	def __init__(self, host=None, database=None, user=None, password=None, port=3306):
+		
+		self.host = host
+		self.database = database
+		self.user = user
+		self.password = password
+		self.port = port
 
-		self.user = None
-		self.password = None
-		self.host = None
-		self.port = None
-		self.database = None
+		self.config_wrapper = ConfigParserWrapper()
+		self.secret_key_path = self.config_wrapper.get('Paths', 'SecretKeyFile')
+
+	def load(self):
+
+		secret_key = self.load_secret_key()
+
+		encrypted_host = self.config_wrapper.get('Database.MySQL', 'Host')
+		encrypted_database = self.config_wrapper.get('Database.MySQL', 'DbName')
+		encrypted_user = self.config_wrapper.get('Database.MySQL', 'Username')
+		encrypted_password = self.config_wrapper.get('Database.MySQL', 'Password')
+		encrypted_port = self.config_wrapper.get('Database.MySQL', 'Port')
+
+		if (not encrypted_host) or (not encrypted_database) or (not encrypted_user) or (not encrypted_password) or (not encrypted_port):
+			return	# At initializing step NULL values are not an error. This func behaves this way is best.
+		
+		self.host = CryptoSymmetric.decrypt_message(encrypted_host, secret_key)
+		self.database = CryptoSymmetric.decrypt_message(encrypted_database, secret_key)
+		self.user = CryptoSymmetric.decrypt_message(encrypted_user, secret_key)
+		self.password = CryptoSymmetric.decrypt_message(encrypted_password, secret_key)
+		self.port = int(CryptoSymmetric.decrypt_message(encrypted_port, secret_key))
+
+	def save(self):
+
+		secret_key = self.load_secret_key()
+
+		encrypted_host = CryptoSymmetric.encrypt_message(self.host, secret_key)
+		encrypted_database = CryptoSymmetric.encrypt_message(self.database, secret_key)
+		encrypted_user = CryptoSymmetric.encrypt_message(self.user, secret_key)
+		encrypted_password = CryptoSymmetric.encrypt_message(self.password, secret_key)
+		encrypted_port = CryptoSymmetric.encrypt_message(self.port, secret_key)
+		
+		self.config_wrapper.set('Database.MySQL', 'Host', encrypted_host.decode('UTF-8'))
+		self.config_wrapper.set('Database.MySQL', 'DbName', encrypted_database.decode('UTF-8'))
+		self.config_wrapper.set('Database.MySQL', 'Username', encrypted_user.decode('UTF-8'))
+		self.config_wrapper.set('Database.MySQL', 'Password', encrypted_password.decode('UTF-8'))
+		self.config_wrapper.set('Database.MySQL', 'Port', encrypted_port.decode('UTF-8'))
+
+		self.config_wrapper.write()
+
+	def load_secret_key(self) -> str:
+
+		if os.path.isfile(self.secret_key_path):
+			with open(self.secret_key_path, 'rb') as f:
+				secret_key = f.read()
+				return secret_key
+			
+		return None
+
 
 class DBConnection:
 
@@ -21,23 +75,20 @@ class DBConnection:
 		self.config_wrapper = ConfigParserWrapper()
 		self.logMe = LogMe()
 
-		self.setCredentials()
+		self.db_credentials = DbCredentials()
+		self.db_credentials.load()
 
-	def setCredentials(self):
-
-		self.db_conn_parameter = DbConnParameter()
-		self.db_conn_parameter.host = self.config_wrapper.get('Database.MySQL', 'Host')
-		self.db_conn_parameter.database = self.config_wrapper.get('Database.MySQL', 'DbName')
-		self.db_conn_parameter.user = self.config_wrapper.get('Database.MySQL', 'Username')
-		self.db_conn_parameter.password = self.config_wrapper.get('Database.MySQL', 'Password')
-
-	def createMySQLConnection(self):
+	def createMySQLConnection(self, no_database=False):
 
 		conn = None
 
 		try:
-			conn = mysql.connector.connect(user = self.db_conn_parameter.user, password = self.db_conn_parameter.password,
-											host = self.db_conn_parameter.host, database = self.db_conn_parameter.database)
+			if no_database:
+				conn = mysql.connector.connect(user = self.db_credentials.user, password = self.db_credentials.password,
+											host = self.db_credentials.host)
+			else:
+				conn = mysql.connector.connect(user = self.db_credentials.user, password = self.db_credentials.password,
+											host = self.db_credentials.host, database = self.db_credentials.database)
 
 			print(info_message('DBConnection::createMySQLConnection()', 'Successfully created a connection with MySQL Server.'))
 			self.logMe.write(info_message('DBConnection::createMySQLConnection()', 'Successfully created a connection with MySQL Server.'))
@@ -52,38 +103,85 @@ class DBConnection:
 			if conn:
 				conn.close
 
-class DbCreator:
+
+class DbOptions:
 
 	def __init__(self):
 		
 		self.config_wrapper = ConfigParserWrapper()
 		self.logMe = LogMe()
 
-		self.db_conn_parameter = DbConnParameter()
-		self.db_conn_parameter.host = self.config_wrapper.get('Database.MySQL', 'Host')
-		self.db_conn_parameter.database = self.config_wrapper.get('Database.MySQL', 'DbName')
-		self.db_conn_parameter.user = self.config_wrapper.get('Database.MySQL', 'Username')
-		self.db_conn_parameter.password = self.config_wrapper.get('Database.MySQL', 'Password')
+		self.db_credentials = DbCredentials()
+		self.db_credentials.load()
 
 		self.db_schema_path = self.config_wrapper.get('Paths', 'DbSchemaFile')
+		self.db_schema_backup_path = self.config_wrapper.get('Paths', 'DbSchemaBackupFile')
 
-	def createUserLogin(self, host, database, user, password):
+	def createDatabase(self, database):
 
-		self.config_wrapper.set('Database.MySQL', 'Host', host)
-		self.config_wrapper.set('Database.MySQL', 'DbName', database)
-		self.config_wrapper.set('Database.MySQL', 'Username', user)
-		self.config_wrapper.set('Database.MySQL', 'Password', password)
+		conn = None
+
+		try:
+			sql = f'CREATE DATABASE {database}'
+			conn = DBConnection().createMySQLConnection(no_database=True)
+
+			cur = conn.cursor()
+			cur.execute(sql)
+			
+			cur.close()
+			conn.commit()
+
+		except Exception as error:
+			print(error_message('DbOptions::createDatabase()', error))
+			self.logMe.write(error_message('DbOptions::createDatabase()', error))
+		
+		finally:
+			if conn:
+				conn.close()
+
+	def enableDatabase(self, enable: bool):
+		
+		self.config_wrapper.set('Database', 'Enabled', enable)
 		self.config_wrapper.write()
+
+	def createUser(self, host, database, user, password, port):
+
+		db_credentials = DbCredentials(host, database, user, password, port)
+		db_credentials.save()
 	
 	def executeSqlFile(self):
 
 		try:
-			run(f"mysql -u {self.db_conn_parameter.user} -p {self.db_conn_parameter.database} < {self.db_schema_path}", shell=True)
+			self.edit_dbname_in_sql_script('OpenWeather', self.db_credentials.database)
+			
+			self.createDatabase(self.db_credentials.database)
+			run(f"mysql -u {self.db_credentials.user} -p {self.db_credentials.database} < {self.db_schema_path}", shell=True)
 
-			print(info_message('DbCreator::executeSqlFile()', 'MySQL OpenWeather created.'))
-			self.logMe.write(info_message('DbCreator::executeSqlFile()', 'MySQL OpenWeather created.'))
+			self.config_wrapper.set('Database', 'Created', True)
+			self.config_wrapper.write()
+
+			print(info_message('DbOptions::executeSqlFile()', 'MySQL OpenWeather created.'))
+			self.logMe.write(info_message('DbOptions::executeSqlFile()', 'MySQL OpenWeather created.'))
 
 		except Exception as error:
-			print(error_message('DbCreator::executeSqlFile()', error))
-			self.logMe.write(error_message('DbCreator::executeSqlFile()', error))
+			print(error_message('DbOptions::executeSqlFile()', error))
+			self.logMe.write(error_message('DbOptions::executeSqlFile()', error))
 	
+	def edit_dbname_in_sql_script(self, old_name, new_name):
+
+		if not os.path.isfile(self.db_schema_backup_path):
+			shutil.copy2(self.db_schema_path, self.db_schema_backup_path)
+		else:
+			shutil.copy2(self.db_schema_backup_path, self.db_schema_path)
+
+		sql = None
+		with open(self.db_schema_path, 'r') as f:
+			sql = f.read()
+
+		sql = re.sub(fr'\b{old_name}\b', new_name, sql)
+
+		with open(self.db_schema_path, 'w') as f:
+			f.write(sql)
+
+		
+		

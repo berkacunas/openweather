@@ -6,6 +6,9 @@ def generate_key():
 
 def encrypt_message(message, key) -> str:
 
+    if not isinstance(message, str):
+        message = str(message)
+        
     encoded_message = message.encode()
     f = Fernet(key)
     encrypted_message = f.encrypt(encoded_message)

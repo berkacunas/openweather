@@ -66,6 +66,7 @@ class Initializer:
 		self.config_wrapper.set('Database.MySQL', 'DbName', '')
 		self.config_wrapper.set('Database.MySQL', 'Username', '')
 		self.config_wrapper.set('Database.MySQL', 'Password', '')
+		self.config_wrapper.set('Database.MySQL', 'Port', '')
 		self.config_wrapper.set('Data', 'ApiKey', '')
 		self.config_wrapper.set('Data', 'CityConflictsJsonFile', os.path.join(self.cwd, 'data', 'CityNameConflicts.json'))
 		self.config_wrapper.set('Settings', 'MaxGroupQueryLimit', '20')
