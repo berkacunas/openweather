@@ -52,9 +52,10 @@
 #																													#
 #####################################################################################################################
 
-import json
+from JsonFile import IJsonFile
 from MySQLConnection import DBConnection
-from LogMe import LogMe, info_message, error_message, frame_info, print_frame_info
+from LogMe import LogMe, info_message, error_message
+from ConfigParserWrapper import ConfigParserWrapper
 from OpenWeatherException import TupleLoadingError, TimezoneError
 
 class City():
@@ -71,7 +72,9 @@ class City():
 		self.state = None
   
 		self.crud = CityCRUD()
+		self.config_wrapper = ConfigParserWrapper()
 		self.logMe = LogMe()
+
   
 	def copy(self, other):
 		'''Copy other object to self object'''
@@ -126,6 +129,33 @@ class City():
 
 		return self.crud.select_all_openweather_ids()
 
+	def compare_json(self, item, *args):
+
+		city = args[0]
+		country = args[1]
+
+		openweather_id = None
+		if (city == item['name']) and (country == item['country']):
+			# print(item)
+			self.openweather_id = item['id']
+			self.name = item['name']
+			self.country_code = item['country']
+			self.longitude = item['coord']['lon']
+			self.latitude = item['coord']['lat']
+
+	def find_in_json(self, city: str, country: str):
+
+		self.city_list_json = self.config_wrapper.get('OpenWeather.Resources.Json', 'CurrentCityList')
+		IJsonFile.traverse(self.compare_json, self.city_list_json, city, country)
+
+	def __str__(self):
+
+		return f'OpenWeather id: {self.openweather_id}, Name: {self.name}, Country: {self.country_code}, Longitude: {self.longitude}, Latitude: {self.latitude}'
+	
+	def __repr__(self):
+
+		return f'City(\'{self.openweather_id}\', {self.name}, {self.country_code}, {self.longitude}, {self.latitude})'
+	
 
 class CityCRUD():
 

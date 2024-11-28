@@ -14,6 +14,7 @@ class Initializer:
 
 		self.cwd = cwd
 		self.init_dir = os.path.join(cwd, '.init')
+		self.inited = os.path.exists(self.init_dir)
 
 		self.config_wrapper = ConfigParserWrapper()
 		self.logMe = LogMe()
