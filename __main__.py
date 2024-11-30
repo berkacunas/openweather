@@ -126,9 +126,10 @@ def subparser_city_func(args):
 		country_name =args.search[1]
 
 		city = City()
-		city.find_in_json(city_name, country_name)
-
-		print(city)
+		city.find_in_openweather_json(city_name, country_name)
+		
+		for match in city.search_matches:
+			print(match)
 
 
 def main():

@@ -203,5 +203,4 @@ class IJsonFile:
 			for item in parser:
 				# Process each JSON object as needed
 				callback(item, *args)
-
 	

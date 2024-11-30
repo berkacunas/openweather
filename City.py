@@ -70,6 +70,8 @@ class City():
 		self.timezone = None
 		self.openweather_id = None
 		self.state = None
+
+		self.search_matches = []
   
 		self.crud = CityCRUD()
 		self.config_wrapper = ConfigParserWrapper()
@@ -129,24 +131,33 @@ class City():
 
 		return self.crud.select_all_openweather_ids()
 
-	def compare_json(self, item, *args):
+	def get_matches(self, item, name, country, state=None):
 
-		city = args[0]
-		country = args[1]
+		city = None
+		if (name == item['name']) and (country == item['country']):
+			city = City()
+			city.openweather_id = item['id']
+			city.name = item['name']
+			city.country_code = item['country']
+			city.longitude = item['coord']['lon']
+			city.latitude = item['coord']['lat']
+			if state and (state == item['state']):
+				city.state = item['state']
 
-		openweather_id = None
-		if (city == item['name']) and (country == item['country']):
-			# print(item)
-			self.openweather_id = item['id']
-			self.name = item['name']
-			self.country_code = item['country']
-			self.longitude = item['coord']['lon']
-			self.latitude = item['coord']['lat']
+			self.search_matches.append(city)
 
-	def find_in_json(self, city: str, country: str):
+
+	def find_in_openweather_json(self, city: str, country: str, state :str = None):
+
+		self.search_matches.clear()
 
 		self.city_list_json = self.config_wrapper.get('OpenWeather.Resources.Json', 'CurrentCityList')
-		IJsonFile.traverse(self.compare_json, self.city_list_json, city, country)
+		IJsonFile.traverse(self.get_matches, self.city_list_json, city, country)
+
+	def add_in_user_json(self):
+
+		raise NotImplementedError('Not implemented yet.')
+
 
 	def __str__(self):
 
