@@ -52,9 +52,10 @@
 #																													#
 #####################################################################################################################
 
-import json
+from JsonFile import IJsonFile
 from MySQLConnection import DBConnection
-from LogMe import LogMe, info_message, error_message, frame_info, print_frame_info
+from LogMe import LogMe, info_message, error_message
+from ConfigParserWrapper import ConfigParserWrapper
 from OpenWeatherException import TupleLoadingError, TimezoneError
 
 class City():
@@ -71,7 +72,9 @@ class City():
 		self.state = None
   
 		self.crud = CityCRUD()
+		self.config_wrapper = ConfigParserWrapper()
 		self.logMe = LogMe()
+
   
 	def copy(self, other):
 		'''Copy other object to self object'''
@@ -125,6 +128,61 @@ class City():
 	def get_all_openweather_ids(self) -> list:
 
 		return self.crud.select_all_openweather_ids()
+
+	def __str__(self):
+
+		return f'OpenWeather id: {self.openweather_id}, Name: {self.name}, Country: {self.country_code}, Longitude: {self.longitude}, Latitude: {self.latitude}'
+	
+	def __repr__(self):
+
+		return f'City(\'{self.openweather_id}\', {self.name}, {self.country_code}, {self.longitude}, {self.latitude})'
+
+
+class CityJson():
+
+	config_wrapper = ConfigParserWrapper()
+	search_matches = []
+
+	@staticmethod
+	def get_matches(item, name, country, state=None):
+
+		city = None
+		if (name == item['name']) and (country == item['country']):
+			city = City()
+			city.openweather_id = item['id']
+			city.name = item['name']
+			city.country_code = item['country']
+			city.longitude = item['coord']['lon']
+			city.latitude = item['coord']['lat']
+			if state and (state == item['state']):
+				city.state = item['state']
+
+			CityJson.search_matches.append(city)
+
+	@staticmethod
+	def get_openweather_id(item, name, country, state=None):
+		
+		if (name == item['name']) and (country == item['country']):
+			print(f"OpenWeather id: {item['id']} City: {item['name']} Country: {item['country']}")
+
+	@staticmethod
+	def find_in_openweather_json(city: str, country: str, state :str = None):
+
+		CityJson.search_matches.clear()
+
+		city_list_json = CityJson.config_wrapper.get('OpenWeather.Resources.Json', 'CurrentCityList')
+		IJsonFile.traverse(CityJson.get_matches, city_list_json, city, country)
+
+	@staticmethod
+	def find_openweather_id(city: str, country: str, state :str = None):
+
+		city_list_json = CityJson.config_wrapper.get('OpenWeather.Resources.Json', 'CurrentCityList')
+		IJsonFile.traverse(CityJson.get_openweather_id, city_list_json, city, country)
+
+	def add_in_user_json(self):
+
+		raise NotImplementedError('Not implemented yet.')
+
 
 
 class CityCRUD():

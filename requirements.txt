@@ -3,3 +3,4 @@ mysql-connector-python
 python-dateutil
 cryptography
 python-dateutil
+ijson

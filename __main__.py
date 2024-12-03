@@ -20,7 +20,7 @@ from OpenWeatherLogger import OpenWeatherLogger
 from OpenWeatherException import ApiKeyNotFoundError
 from WeatherData import WeatherData
 from WeatherDataParser import WeatherDataParser
-from City import City
+from City import City, CityJson
 from MySQLConnection import DbOptions
 from LogMe import LogMe, info_message, error_message
 
@@ -29,8 +29,10 @@ cwd = os.getcwd()
 init_dir = os.path.join(cwd, '.init')
 
 initializer = Initializer(cwd)
-db_options = DbOptions()
 config_wrapper = ConfigParserWrapper()
+	
+if initializer.inited:
+	db_options = DbOptions()
 
 
 def do_you_want_to_continue(message: str) -> bool:
@@ -114,7 +116,26 @@ def subparser_db_func(args):
 		message = 'Do you want to disable MySQL database?'
 		if do_you_want_to_continue(message):
 			db_options.enableDatabase(False)
-				
+
+
+def subparser_city_func(args):
+
+	if args.search:
+
+		city_name = args.search[0]
+		country_name =args.search[1]
+
+		CityJson.find_in_openweather_json(city_name, country_name)
+		
+		for match in CityJson.search_matches:
+			print(match)
+
+	if args.openweather_id:
+
+		city_name = args.openweather_id[0]
+		country_name =args.openweather_id[1]
+		
+		CityJson.find_openweather_id(city_name, country_name)
 
 def main():
 
@@ -146,6 +167,11 @@ def main():
 	db_parser.add_argument('-d', '--disable', action='store_true')
 	db_parser.add_argument('-s', '--set-credentials', action='store_true')
 	db_parser.set_defaults(func=subparser_db_func)
+
+	city_parser = subparsers.add_parser('city', help='City Operations')
+	city_parser.add_argument('-s', '--search', nargs=2, action='store', help='cityname countrycode')
+	city_parser.add_argument('-o', '--openweather-id', nargs=2, action='store', help='Print OpenWeather id of selected city.')
+	city_parser.set_defaults(func=subparser_city_func)
 
 
 	try:
