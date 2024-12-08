@@ -194,7 +194,7 @@ class IJsonFile:
 	@staticmethod
 	def traverse(callback, path, *args):
 
-		with open(path, 'r') as f:
+		with open(path, 'r', encoding='utf-8') as f:
 
 			# Parse the JSON objects one by one
 			parser = ijson.items(f, 'item')
