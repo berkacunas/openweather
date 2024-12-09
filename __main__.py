@@ -137,72 +137,30 @@ def subparser_city_func(args):
 		
 		CityJson.find_openweather_id(city_name, country_name)
 
-def main():
+	if args.last_weather:
 
-	logMe = LogMe()
+		count = len(args.last_weather)
 
-	global_parser = argparse.ArgumentParser(prog='openweather', 
-											description='OpenWeather Server and Data Management Module',
-										 epilog='Thanks for using %(prog)s!')
+		city_name = args.last_weather[0]
+
+		state_name = None
+		country_name = None
+
+		if count == 2:
+			country_name = args.last_weather[1]
+		elif count == 3:
+			state_name = args.last_weather[1]
+			country_name = args.last_weather[2]
+
+		city = City()
+		city_id = city.get_id_by_name(city_name, country_name, state_name)
 		
-	global_parser.add_argument('-d', '--daemon', action="store_true", help='Run as daemon')
-	global_parser.set_defaults(func=global_parser_func)
+		city.load(city_id)
+		city.get_last_weather()
 
-	subparsers = global_parser.add_subparsers(title="subcommands")
+		print(city.weatherDatas[0])
 
-	init_parser = subparsers.add_parser('init', help='First Run Initialize Operations')
-	init_parser.set_defaults(func=subparser_init_parser_func)
-
-	status_parser = subparsers.add_parser('status')
-	status_parser.set_defaults(func=subparser_status_parser_func)
-
-	api_parser = subparsers.add_parser('apikey', help='Api Key Operations')
-	api_parser.add_argument('-n', '--newvalue', help='Enter new value')
-	api_parser.add_argument('-p', '--print', action='store_true', help='Print Api Key to stdout')
-	api_parser.set_defaults(func=subparser_apikey_func)
-
-	db_parser = subparsers.add_parser('db', help='Database Operations')
-	db_parser.add_argument('-c', '--create', action='store_true')
-	db_parser.add_argument('-e', '--enable', action='store_true')
-	db_parser.add_argument('-d', '--disable', action='store_true')
-	db_parser.add_argument('-s', '--set-credentials', action='store_true')
-	db_parser.set_defaults(func=subparser_db_func)
-
-	city_parser = subparsers.add_parser('city', help='City Operations')
-	city_parser.add_argument('-s', '--search', nargs=2, action='store', help='cityname countrycode')
-	city_parser.add_argument('-o', '--openweather-id', nargs=2, action='store', help='Print OpenWeather id of selected city.')
-	city_parser.set_defaults(func=subparser_city_func)
-
-
-	try:
-		args = global_parser.parse_args()
-
-		if args.func:
-			args.func(args)
-		
-		arg_len = len(sys.argv)
-		if arg_len > 1:
-			return
-
-	except AttributeError as attributeError:
-		print(error_message('main()::args.func(args)', attributeError))
-		logMe.write(error_message('main()::args.func(args)', attributeError))
-		pass
-
-	except ApiKeyNotFoundError as apiKeyNotFoundError:
-		print(error_message('main()::args.func(args)', apiKeyNotFoundError))
-		logMe.write(error_message('main()::args.func(args)', apiKeyNotFoundError))
-		return
-	
-	except Exception as error:
-		print(error_message('main()::args.func(args)', error))
-		logMe.write(error_message('main()::args.func(args)', error))
-		return
-	
-	if not os.path.exists(init_dir):
-		print('You should initialize OpenWeather before start using it.\ne.g. $ openweather init')
-		return
-
+def subparser_query_func(args):
 
 	try:
 		
@@ -266,7 +224,7 @@ def main():
 							weatherData.logger_id = logger_id
 
 							if not weatherData.is_exists():
-								if not weatherData.city_id:
+								if not weatherData.city_id or weatherData.city_id == -1:
 									print(error_message('main()::under \'for data in datalist[\'list\']:\'', f'Cannot download data of city openweather id: {openweather_ids[index]}. Skipped.'))
 									logMe.write(error_message('main()::under \'for data in datalist[\'list\']:\'', f'Cannot download data of city openweather id: {openweather_ids[index]}. Skipped.'))
 								else:
@@ -301,6 +259,87 @@ def main():
 	except Exception as error:
 		print(error_message('main():: main block error', error))
 		logMe.write(error_message('main():: main block error', error))
+
+
+
+
+def main():
+
+	global logMe
+
+	logMe = LogMe()
+
+	global_parser = argparse.ArgumentParser(prog='openweather', 
+											description='OpenWeather Server and Data Management Module',
+										 epilog='Thanks for using %(prog)s!')
+		
+	global_parser.add_argument('-d', '--daemon', action="store_true", help='Run as daemon')
+	global_parser.set_defaults(func=global_parser_func)
+
+	subparsers = global_parser.add_subparsers(title="subcommands")
+
+	init_parser = subparsers.add_parser('init', help='First Run Initialize Operations')
+	init_parser.set_defaults(func=subparser_init_parser_func)
+
+	status_parser = subparsers.add_parser('status')
+	status_parser.set_defaults(func=subparser_status_parser_func)
+
+	api_parser = subparsers.add_parser('apikey', help='Api Key Operations')
+	api_parser.add_argument('-n', '--newvalue', help='Enter new value')
+	api_parser.add_argument('-p', '--print', action='store_true', help='Print Api Key to stdout')
+	api_parser.set_defaults(func=subparser_apikey_func)
+
+	db_parser = subparsers.add_parser('db', help='Database Operations')
+	db_parser.add_argument('-c', '--create', action='store_true')
+	db_parser.add_argument('-e', '--enable', action='store_true')
+	db_parser.add_argument('-d', '--disable', action='store_true')
+	db_parser.add_argument('-s', '--set-credentials', action='store_true')
+	db_parser.set_defaults(func=subparser_db_func)
+
+	city_parser = subparsers.add_parser('city', help='City Operations')
+	city_parser.add_argument('-s', '--search', nargs=2, action='store', help='cityname countrycode')
+	city_parser.add_argument('-o', '--openweather-id', nargs=2, action='store', help='Print OpenWeather id of selected city')
+	city_parser.add_argument('-l', '--last-weather', nargs=2, action='store', help='Print last weather data fetched from server')
+	city_parser.set_defaults(func=subparser_city_func)
+
+	query_parser = subparsers.add_parser('query', help='Server Queries')
+	query_parser.add_argument('-a', '--query-all', action='store_true', help='Get all last data from all cities from server')
+	query_parser.set_defaults(func=subparser_query_func)
+
+
+
+
+	try:
+		args = global_parser.parse_args()
+
+		if args.func:
+			args.func(args)
+		
+		arg_len = len(sys.argv)
+		if arg_len > 1:
+			return
+
+	except AttributeError as attributeError:
+		print(error_message('main()::args.func(args)', attributeError))
+		logMe.write(error_message('main()::args.func(args)', attributeError))
+		pass
+
+	except ApiKeyNotFoundError as apiKeyNotFoundError:
+		print(error_message('main()::args.func(args)', apiKeyNotFoundError))
+		logMe.write(error_message('main()::args.func(args)', apiKeyNotFoundError))
+		return
+	
+	except Exception as error:
+		print(error_message('main()::args.func(args)', error))
+		logMe.write(error_message('main()::args.func(args)', error))
+		return
+	
+	if not os.path.exists(init_dir):
+		print('You should initialize OpenWeather before start using it.\ne.g. $ openweather init')
+		return
+
+
+	
 
 
 

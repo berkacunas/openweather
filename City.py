@@ -52,6 +52,7 @@
 #																													#
 #####################################################################################################################
 
+from WeatherData import WeatherData
 from JsonFile import IJsonFile
 from MySQLConnection import DBConnection
 from LogMe import LogMe, info_message, error_message
@@ -75,19 +76,27 @@ class City():
 		self.config_wrapper = ConfigParserWrapper()
 		self.logMe = LogMe()
 
+		self.weatherDatas = []
+
+	def get_last_weather(self):
+
+		weatherData = WeatherData()
+		weatherData.get_last(self.id)
+
+		self.weatherDatas.append(weatherData)
   
 	def copy(self, other):
 		'''Copy other object to self object'''
 
 		try:
-			self.id = self.get_id_by_openweather_id(other.city.openweather_id)
-			self.name = other.city.name
-			self.longitude = other.city.longitude
-			self.latitude = other.city.latitude
-			self.country_code = other.city.country_code
-			self.timezone = other.city.timezone
-			self.openweather_id = other.city.openweather_id
-			self.state = other.city.state
+			self.id = self.crud.select_id_by_openweather_id(other.openweather_id)
+			self.name = other.name
+			self.longitude = other.longitude
+			self.latitude = other.latitude
+			self.country_code = other.country_code
+			self.timezone = other.timezone
+			self.openweather_id = other.openweather_id
+			self.state = other.state
 
 		except Exception as error:
 			print(error_message('CityCRUD::copy()', error))
@@ -109,9 +118,9 @@ class City():
 
 		self.crud.delete(self.id)
 
-	def get_id_by_name(self, name) -> int:
+	def get_id_by_name(self, name, country_code, state=None) -> int:
 
-		return self.crud.select_id_by_name(name)
+		return self.crud.select_id_by_name(name, country_code, state)
 	
 	def get_name_by_id(self, id) -> str:
 
@@ -246,7 +255,7 @@ class CityCRUD():
 			if conn:
 				conn.close()
 
-	def select_id_by_name(self, city_name) -> int:
+	def select_id_by_name(self, name, country_code, state=None) -> int:
 		'''If city exists, returns city id from City table.
   		If  city doesn't exist, returns -1.'''
 
@@ -254,8 +263,14 @@ class CityCRUD():
 			conn = self.dbConn.createMySQLConnection()
 			cur = conn.cursor()
 
-			sql = "SELECT id FROM city WHERE name = %s"
-			cur.execute(sql, (city_name, ))
+			sql = None
+			if not state:
+				sql = "SELECT id FROM city WHERE name = %s AND state is NULL AND country_code = %s"
+				cur.execute(sql, (name, country_code, ))
+			else:
+				sql = "SELECT id FROM city WHERE name = %s AND state = %s AND country_code = %s"
+				cur.execute(sql, (name, state, country_code, ))
+			
 			row = cur.fetchone()
 
 			if row:

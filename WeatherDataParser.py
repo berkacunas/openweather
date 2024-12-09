@@ -53,9 +53,9 @@ class WeatherDataParser:
 			if not city_name:
 				city_name = data["name"]
 
-			weatherData.city_id = City().get_id_by_name(city_name)
+			weatherData.city_id = City().get_id_by_name(city_name, weatherData.sys['country'], None)
 			if (weatherData.city_id == -1) or (weatherData.city_id == None):
-				raise CityNotFoundError()
+				raise CityNotFoundError(error_message('WeatherDataParser.parse()', f'Cannot find city id of {city_name}'))
 			
 			weatherData.longitude = float(coord["lon"])
 			weatherData.latitude = float(coord["lat"])

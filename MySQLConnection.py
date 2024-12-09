@@ -6,7 +6,7 @@ from subprocess import Popen, run, PIPE
 from ConfigParserWrapper import ConfigParserWrapper
 import CryptoSymmetric
 
-from LogMe import LogMe, info_message, error_message, frame_info, print_frame_info
+from LogMe import LogMe, info_message, error_message
 
 class DbCredentials:
 

@@ -98,11 +98,19 @@ class WeatherData:
 
 		except Exception as error:
 			print(error_message('WeatherData.copy()', error))
-			self.g_Options.logMe.logs.append(error_message('WeatherData.copy()', error))
+			self.logMe.add(error_message('WeatherData.copy()', error))
 
 	def load(self, id):
 
 		self.copy(self.crud.select(id))
+
+	# def get_data(self, date):
+
+	# 	self.crud.select_by_date(date)
+
+	def get_last(self, city_id):
+
+		self.copy(self.crud.select_last(city_id))
 
 	def add(self):
 
@@ -121,6 +129,29 @@ class WeatherData:
 		return [self.city_id, self.date, self.time, self.weather_type, self.description, self.icon, self.base, self.temperature, 
 	  			self.feels_like, self.temperature_min, self.temperature_max, self.pressure, self.humidity, self.visibility, 
 				self.wind_speed, self.wind_degree, self.cloudiness, self.dt, self.sunrise, self.sunset, self.hour_of_the_day, self.logger_id]
+	
+	def __str__(self) -> str:
+		
+		s =  '**********************************************************************************\n'
+		s += f'Date: {self.date} {self.time}\n'
+		s += f'Observation Time: {self.dt}\n'
+		s += f'Weather Type: {self.weather_type}\n'
+		s += f'Description: {self.description}\n'
+		s += f'Temperature: {self.temperature}\n'
+		s += f'Feels like: {self.feels_like}\n'
+		s += f'Max Temperature: {self.temperature_max}\n'
+		s += f'Min Temperature: {self.temperature_min}\n'
+		s += f'Pressure: {self.pressure}\n'
+		s += f'Humidity: {self.humidity}\n'
+		s += f'Visibility: {self.visibility}\n'
+		s += f'Wind Speed: {self.wind_speed}\n'
+		s += f'Wind Degree: {self.wind_degree}\n'
+		s += f'Cloudiness: {self.cloudiness}\n'
+		s += f'Sunrise: {self.sunrise}\n'
+		s += f'Sunset: {self.sunset}\n'
+		s += '**********************************************************************************'
+
+		return s
 
 
 class WeatherDataCRUD:
@@ -160,7 +191,9 @@ class WeatherDataCRUD:
 			weatherData.sunrise = int(item[19])
 			weatherData.sunset = int(item[20])
 			weatherData.hour_of_the_day = item[21]
-			weatherData.logger_id = int(item[22])
+
+			if item[22]:
+				weatherData.logger_id = int(item[22])
 
 			return weatherData
 		
@@ -231,6 +264,41 @@ class WeatherDataCRUD:
 			if conn:
 				conn.close()
 
+	def select_last(self, city_id):
+
+		try:
+			conn = self.dbConn.createMySQLConnection()
+			cur = conn.cursor()
+
+			sql = ''' SELECT id, city_id, date, time, type, description, icon, base, temp, feels_like, temp_min, 
+					  temp_max, pressure, humidity, visibility, wind_speed, wind_degree, cloudiness, dt, sunrise, 
+					  sunset, hour_of_the_day, logger_id FROM data 
+					  WHERE city_id = %s 
+					  AND 
+					  dt = (SELECT MAX(dt) FROM data WHERE city_id = %s);
+					'''
+						 
+			cur.execute(sql, (city_id, city_id, ))
+			row = cur.fetchone()
+			cur.close()
+
+			weatherData = None
+			if row:
+				weatherData = WeatherDataCRUD.load_tuple(row)
+
+				print(info_message('WeatherDataCRUD::select_last()', 'All weatherdatas are got.'))
+				self.logMe.write(info_message('WeatherDataCRUD::select_last()', 'All weatherdatas are got.'))
+
+			return weatherData
+
+		except Exception as error:
+			print(error_message('WeatherDataCRUD::select_last()', error))
+			self.logMe.write(error_message('WeatherDataCRUD::select_last()', error))
+
+		finally:
+			if conn:
+				conn.close()
+
 	def insert(self, weatherData: WeatherData):
 
 		try:
@@ -292,7 +360,7 @@ class WeatherDataCRUD:
 
 		except Exception as error:
 			print(error_message('WeatherDataCRUD.insertmany()', error))
-			self.g_Options.logMe.logs.append(error_message('WeatherDataCRUD.insertmany()', error))
+			self.logMe.add(error_message('WeatherDataCRUD.insertmany()', error))
 		
 		finally:
 			if conn:
