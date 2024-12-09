@@ -1,8 +1,8 @@
-CREATE DATABASE  IF NOT EXISTS `OpenWeather2` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `OpenWeather2`;
+CREATE DATABASE  IF NOT EXISTS `OpenWeather` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `OpenWeather`;
 -- MySQL dump 10.13  Distrib 8.0.36, for Linux (x86_64)
 --
--- Host: 127.0.0.1    Database: OpenWeather2
+-- Host: 127.0.0.1    Database: OpenWeather
 -- ------------------------------------------------------
 -- Server version	8.0.36-0ubuntu0.22.04.1
 
@@ -118,7 +118,7 @@ CREATE TABLE `data` (
   `sunrise` bigint DEFAULT NULL,
   `sunset` bigint DEFAULT NULL,
   `hour_of_the_day` int DEFAULT NULL,
-  `query_id` int DEFAULT NULL,
+  `logger_id` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `city_id` (`city_id`),
   CONSTRAINT `data_ibfk_1` FOREIGN KEY (`city_id`) REFERENCES `city` (`id`)

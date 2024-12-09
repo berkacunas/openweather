@@ -78,7 +78,17 @@ class City():
 
 		self.weatherDatas = []
 
-	def get_last_weather(self):
+	@staticmethod
+	def get_last_weather(name: str, state: str | None, country_code: str) -> WeatherData:
+	 
+		city = City()
+		city_id = city.get_id_by_name(name, state, country_code)
+		city.load(city_id)
+		city._get_last_weather()
+  
+		return city.weatherDatas[0]
+
+	def _get_last_weather(self):
 
 		weatherData = WeatherData()
 		weatherData.get_last(self.id)
@@ -118,9 +128,9 @@ class City():
 
 		self.crud.delete(self.id)
 
-	def get_id_by_name(self, name, country_code, state=None) -> int:
+	def get_id_by_name(self, name: str, state: str | None, country_code: str) -> int:
 
-		return self.crud.select_id_by_name(name, country_code, state)
+		return self.crud.select_id_by_name(name, state, country_code)
 	
 	def get_name_by_id(self, id) -> str:
 
@@ -153,10 +163,10 @@ class CityJson():
 	search_matches = []
 
 	@staticmethod
-	def get_matches(item, name, country, state=None):
+	def get_matches(item, name: str, state: str | None, country_code: str):
 
 		city = None
-		if (name == item['name']) and (country == item['country']):
+		if (name == item['name']) and (country_code == item['country']):
 			city = City()
 			city.openweather_id = item['id']
 			city.name = item['name']
@@ -169,24 +179,27 @@ class CityJson():
 			CityJson.search_matches.append(city)
 
 	@staticmethod
-	def get_openweather_id(item, name, country, state=None):
+	def get_openweather_id(item, name: str, state: str | None, country_code: str):
 		
-		if (name == item['name']) and (country == item['country']):
-			print(f"OpenWeather id: {item['id']} City: {item['name']} Country: {item['country']}")
-
+		if (name == item['name']) and (country_code == item['country']):
+			if state and (state == item['state']):
+				print(f"OpenWeather id: {item['id']} City: {item['name']} State: {item['state']} Country: {item['country']}")
+				return
+			print(f"OpenWeather id: {item['id']} City: {item['name']} State: {item['state']} Country: {item['country']}")
+				
 	@staticmethod
-	def find_in_openweather_json(city: str, country: str, state :str = None):
+	def find_in_openweather_json(city: str, state: str | None, country_code: str):
 
 		CityJson.search_matches.clear()
 
 		city_list_json = CityJson.config_wrapper.get('OpenWeather.Resources.Json', 'CurrentCityList')
-		IJsonFile.traverse(CityJson.get_matches, city_list_json, city, country)
+		IJsonFile.traverse(CityJson.get_matches, city_list_json, city, state, country_code)
 
 	@staticmethod
-	def find_openweather_id(city: str, country: str, state :str = None):
+	def find_openweather_id(city: str, state: str | None, country_code: str):
 
 		city_list_json = CityJson.config_wrapper.get('OpenWeather.Resources.Json', 'CurrentCityList')
-		IJsonFile.traverse(CityJson.get_openweather_id, city_list_json, city, country)
+		IJsonFile.traverse(CityJson.get_openweather_id, city_list_json, city, state, country_code)
 
 	def add_in_user_json(self):
 
@@ -255,9 +268,9 @@ class CityCRUD():
 			if conn:
 				conn.close()
 
-	def select_id_by_name(self, name, country_code, state=None) -> int:
+	def select_id_by_name(self, name: str, state: str | None, country_code: str) -> int:
 		'''If city exists, returns city id from City table.
-  		If  city doesn't exist, returns -1.'''
+		  If  city doesn't exist, returns -1.'''
 
 		try:
 			conn = self.dbConn.createMySQLConnection()
@@ -496,9 +509,9 @@ class CityCRUD():
 			if conn:
 				conn.close()
 
-	def is_exists(self, openweather_id) -> bool:
+	def is_exists(self, openweather_id: int) -> bool:
 		'''Cannot query by name because there are more than one city with same name. 
-  		Use openweather id for query as a unique identifier.'''
+		  Use openweather id for query as a unique identifier.'''
 
 		try:
 			conn = self.dbConn.createMySQLConnection()

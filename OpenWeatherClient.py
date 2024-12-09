@@ -10,7 +10,7 @@ class OpenWeatherData:
 		self.url = url
 		self.query_time = query_time
 
-class OpenWeatherServer:
+class OpenWeatherClient:
 
 	def __init__(self, api_key):
 		
@@ -18,9 +18,9 @@ class OpenWeatherServer:
 		config_wrapper = ConfigParserWrapper()
 		self.base_url = config_wrapper.get('OpenWeather.Server', 'Url')
 
-	def get_response(self, city_name, units='metric'):
+	def get_response(self, city_name: str, state: str | None, country_code, units='metric'):
 
-		url = self.prepare_query_url(city_name)
+		url = self.prepare_query_url(city_name, state, country_code)
 		response = requests.get(url)
 
 		return (response, url)
@@ -28,9 +28,9 @@ class OpenWeatherServer:
 	# standard, metric and imperial units are available. 
 	# If you do not use the units parameter, standard units 
 	# will be applied by default.
-	def get_single_openweatherdata(self, city_name, units='metric') -> OpenWeatherData:
+	def get_single_openweatherdata(self, city_name: str, state: str | None, country_code: str, units='metric') -> OpenWeatherData:
 
-		response, url = self.get_response(city_name, units)
+		response, url = self.get_response(city_name, state, country_code, units)
 		query_time = datetime.now()
 
 		return OpenWeatherData(response.json(), url, query_time)
@@ -59,6 +59,11 @@ class OpenWeatherServer:
 	
 		return f'https://api.openweathermap.org/data/2.5/group?id={query_token}&appid={self.api_key}'
 
-	def prepare_query_url(self, city_name, units='metric'):
+	def prepare_query_url(self, city_name, state: str | None, country_code, units='metric'):
 	
-		return f'{self.base_url}appid={self.api_key}&q={city_name}&units={units}'
+		query = None
+		if not state:
+			query = f'{self.base_url}appid={self.api_key}&q={city_name},{country_code}&units={units}'
+		else:
+			query = f'{self.base_url}appid={self.api_key}&q={city_name},{state},{country_code}&units={units}'
+		return query

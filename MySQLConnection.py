@@ -153,7 +153,8 @@ class DbOptions:
 
 			self.db_credentials.load()
 
-			self._edit_dbname_in_sql_script('OpenWeather', self.db_credentials.database)
+			if self.db_credentials.database != 'OpenWeather':
+				self._edit_dbname_in_sql_script('OpenWeather', self.db_credentials.database)
 			
 			self.createDatabase(self.db_credentials.database)
 			run(f"mysql -u {self.db_credentials.user} -p {self.db_credentials.database} < {self.db_schema_path}", shell=True)

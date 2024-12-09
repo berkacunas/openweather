@@ -33,6 +33,8 @@
 #		- is_hour_of_the_day_existsself, weatherData) -> bool														#
 #####################################################################################################################
 
+from datetime import datetime
+
 from MySQLConnection import DBConnection
 from LogMe import LogMe, info_message, error_message
 from OpenWeatherException import TupleLoadingError
@@ -131,24 +133,26 @@ class WeatherData:
 				self.wind_speed, self.wind_degree, self.cloudiness, self.dt, self.sunrise, self.sunset, self.hour_of_the_day, self.logger_id]
 	
 	def __str__(self) -> str:
+     
+		date_format = '%d-%m-%Y %H:%M:%S'
 		
 		s =  '**********************************************************************************\n'
 		s += f'Date: {self.date} {self.time}\n'
-		s += f'Observation Time: {self.dt}\n'
+		s += f'Observation Time: {datetime.fromtimestamp(self.dt).strftime(date_format)}\n'
 		s += f'Weather Type: {self.weather_type}\n'
 		s += f'Description: {self.description}\n'
 		s += f'Temperature: {self.temperature}\n'
 		s += f'Feels like: {self.feels_like}\n'
 		s += f'Max Temperature: {self.temperature_max}\n'
 		s += f'Min Temperature: {self.temperature_min}\n'
-		s += f'Pressure: {self.pressure}\n'
-		s += f'Humidity: {self.humidity}\n'
-		s += f'Visibility: {self.visibility}\n'
-		s += f'Wind Speed: {self.wind_speed}\n'
+		s += f'Pressure: {self.pressure} hPa\n'
+		s += f'Humidity: {self.humidity} %\n'
+		s += f'Visibility: {self.visibility} m.\n'
+		s += f'Wind Speed: {self.wind_speed} km/h\n'
 		s += f'Wind Degree: {self.wind_degree}\n'
 		s += f'Cloudiness: {self.cloudiness}\n'
-		s += f'Sunrise: {self.sunrise}\n'
-		s += f'Sunset: {self.sunset}\n'
+		s += f'Sunrise: {datetime.fromtimestamp(self.sunrise).strftime(date_format)}\n'
+		s += f'Sunset: {datetime.fromtimestamp(self.sunset).strftime(date_format)}\n'
 		s += '**********************************************************************************'
 
 		return s

@@ -55,6 +55,7 @@ class Initializer:
 		self.config_wrapper.set('Paths', 'ApiKeyFile', os.path.join(self.cwd, 'data', 'api.key'))
 		self.config_wrapper.set('Paths', 'SecretKeyFile', os.path.join(self.cwd, 'data', 'secret.key'))
 		self.config_wrapper.set('Paths', 'DbSchemaFile', os.path.join(self.cwd, 'data', 'openweather-mysql-schema.sql'))
+		self.config_wrapper.set('Paths', 'DbSchemaBackupFile', os.path.join(self.cwd, 'data', 'openweather-mysql-schema.sql.backup'))
 		self.config_wrapper.set('Flags', 'JsonOn', 'False')
 		self.config_wrapper.set('Flags', 'CsvOn', 'False')
 		self.config_wrapper.set('Flags', 'LogOn', 'True')
