@@ -5,3 +5,4 @@ __pycache__/
 log/
 secret.key
 todo.txt
+requirements2.txt
