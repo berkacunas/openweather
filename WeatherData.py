@@ -132,6 +132,46 @@ class WeatherData:
 	  			self.feels_like, self.temperature_min, self.temperature_max, self.pressure, self.humidity, self.visibility, 
 				self.wind_speed, self.wind_degree, self.cloudiness, self.dt, self.sunrise, self.sunset, self.hour_of_the_day, self.logger_id]
 	
+	@staticmethod
+	def get_wind_direction(wind_degree):
+
+		if wind_degree > (315 + 22.5) or wind_degree <= (0 + 22.5):
+			return 'N'
+		elif wind_degree > (0 + 22.5) and wind_degree <= (45 + 22.5):
+			return 'NE'
+		elif wind_degree > (45 + 22.5) and wind_degree <= (90 + 22.5):
+			return 'E'
+		elif wind_degree > (90 + 22.5) and wind_degree <= (135 + 22.5):
+			return 'SE'
+		elif wind_degree > (135 + 22.5) and wind_degree <= (180 + 22.5):
+			return 'S'
+		elif wind_degree > (180 + 22.5) and wind_degree <= (225 + 22.5):
+			return 'SW'
+		elif wind_degree > (225 + 22.5) and wind_degree <= (270 + 22.5):
+			return 'W'
+		elif wind_degree > (270 + 22.5) and wind_degree <= (315 + 22.5):
+			return 'NW'
+
+	@staticmethod
+	def get_wind_name(direction):
+
+		if direction == 'N':
+			return 'Yıldız'
+		elif direction == 'NE':
+			return 'Poyraz'
+		elif direction == 'E':
+			return 'Gündoğusu'
+		elif direction == 'SE':
+			return 'Keşişleme'
+		elif direction == 'S':
+			return 'Kıble'
+		elif direction == 'SW':
+			return 'Lodos'
+		elif direction == 'W':
+			return 'Günbatısı'
+		elif direction == 'NW':
+			return 'Karayel'
+
 	def __str__(self) -> str:
      
 		date_format = '%d-%m-%Y %H:%M:%S'
@@ -141,16 +181,18 @@ class WeatherData:
 		s += f'Observation Time: {datetime.fromtimestamp(self.dt).strftime(date_format)}\n'
 		s += f'Weather Type: {self.weather_type}\n'
 		s += f'Description: {self.description}\n'
-		s += f'Temperature: {self.temperature}\n'
-		s += f'Feels like: {self.feels_like}\n'
-		s += f'Max Temperature: {self.temperature_max}\n'
-		s += f'Min Temperature: {self.temperature_min}\n'
+		s += f'Temperature: {round(self.temperature)} °C\n'
+		s += f'Feels like: {round(self.feels_like)} °C\n'
+		s += f'Max Temperature: {round(self.temperature_max, 1)} °C\n'
+		s += f'Min Temperature: {round(self.temperature_min, 1)} °C\n'
 		s += f'Pressure: {self.pressure} hPa\n'
-		s += f'Humidity: {self.humidity} %\n'
-		s += f'Visibility: {self.visibility} m.\n'
-		s += f'Wind Speed: {self.wind_speed} km/h\n'
-		s += f'Wind Degree: {self.wind_degree}\n'
-		s += f'Cloudiness: {self.cloudiness}\n'
+		s += f'Humidity: {self.humidity}%\n'
+		s += f'Visibility: {self.visibility / 1000} km\n'
+		s += f'Wind Speed: {round((self.wind_speed * 3.6), 2)} km/h\n'
+		s += f'Wind Degree: {self.wind_degree}°\n'
+		s += f'Wind Direction: {WeatherData.get_wind_direction(self.wind_degree)}\n'
+		s += f'Wind name: {WeatherData.get_wind_name(WeatherData.get_wind_direction(self.wind_degree))}\n'
+		s += f'Cloudiness: {self.cloudiness}%\n'
 		s += f'Sunrise: {datetime.fromtimestamp(self.sunrise).strftime(date_format)}\n'
 		s += f'Sunset: {datetime.fromtimestamp(self.sunset).strftime(date_format)}\n'
 		s += '**********************************************************************************'

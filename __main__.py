@@ -21,6 +21,7 @@ from OpenWeatherException import ApiKeyNotFoundError
 from WeatherData import WeatherData
 from WeatherDataParser import WeatherDataParser
 from City import City, CityJson
+from CountryCode import CountryCode
 from MySQLConnection import DbOptions
 from LogMe import LogMe, info_message, error_message
 
@@ -39,15 +40,13 @@ def _extract_city_data(args):
 	count = len(args)
 
 	city_name = args[0]
-
 	state = None
 	country_code = None
 
+	if count == 3:
+		state = args[1]
 	if count == 2:
 		country_code = args[1]
-	elif count == 3:
-		state = args[1]
-		country_code = args[2]
   
 	return city_name, state, country_code
 
@@ -155,6 +154,20 @@ def subparser_city_func(args):
 		weatherData = City.get_last_weather(city_name, state, country_code)
 		print(weatherData)
 
+def subparser_country_func(args):
+
+
+	if args.search_code:
+
+		country_name = CountryCode.get_country_code(args.search_code[0])
+		print(country_name)
+
+
+	if args.search_name:
+		
+		country_code = CountryCode.get_country_name(args.search_name[0])
+		print(country_code)
+
 
 def subparser_query_func(args):
 
@@ -190,82 +203,79 @@ def subparser_query_func(args):
 
 			start_time = datetime.now()
 			print(f'Started at {start_time}')
-
 			
 			city = City()	
+			openweather_ids = city.get_all_openweather_ids()
 
-			if initializer.is_daemon:
+			max_query_limit = config_wrapper.getint('Settings', 'MaxGroupQueryLimit')
+			loop_count = math.ceil(len(openweather_ids) /  max_query_limit)
+			
+			rows = []
+			query_ids = []
+			query_token = ''
+
+			for i in range(loop_count):
 				
-				openweather_ids = city.get_all_openweather_ids()
+				for k in range(max_query_limit):
 
-				max_query_limit = config_wrapper.getint('Settings', 'MaxGroupQueryLimit')
-				loop_count = math.ceil(len(openweather_ids) /  max_query_limit)
+					if (index) == len(openweather_ids):
+						break
+
+					print(f'{index}: {openweather_ids[index]}')
+					query_ids.append(str(openweather_ids[index]))
+					index += 1
 				
-				rows = []
-				query_ids = []
-				query_token = ''
+				if len(query_ids) > 0:
+					query_token = ''
+					query_token = ','.join(query_ids)[:-1]
 
-				for i in range(loop_count):
-					
-					for k in range(max_query_limit):
+					openweatherdata = owc.get_group_openweatherdata(query_token)
+					datalist = openweatherdata.json
 
-						if index == len(openweather_ids):
-							break
+					first_data_dt = int(datalist['list'][0]["dt"])
 
-						query_ids.append(str(openweather_ids[index]))
-						index += 1
-					
-					if len(query_ids) > 0:
-						query_token = ''
-						query_token = ','.join(query_ids)[:-1]
+					logger = OpenWeatherLogger()
+					logger.mark(first_data_dt, openweatherdata.url, openweatherdata.query_time)
+					logger_id = logger.add()				
 
-						openweatherdata = owc.get_group_openweatherdata(query_token)
-						datalist = openweatherdata.json
+					for data in datalist['list']:
+						try:
+							parser = WeatherDataParser()
+							weatherData = parser.parse(data, is_kelvin_to_celcius=True)
+							weatherData.logger_id = logger_id
 
-						first_data_dt = int(datalist['list'][0]["dt"])
+							if not weatherData.is_exists():
+								if not weatherData.city_id or weatherData.city_id == -1:
+									print(error_message('main()::under \'for data in datalist[\'list\']:\'', f'Cannot download data of city openweather id: {openweather_ids[index]}. Skipped.'))
+									logMe.write(error_message('main()::under \'for data in datalist[\'list\']:\'', f'Cannot download data of city openweather id: {openweather_ids[index]}. Skipped.'))
+								else:
+									rows.append(weatherData.to_list())
 
-						logger = OpenWeatherLogger()
-						logger.mark(first_data_dt, openweatherdata.url, openweatherdata.query_time)
-						logger_id = logger.add()				
+						except Exception as error:
+							print(error_message('main()::under \'for data in datalist[\'list\']:\'', error))
+							logMe.write(error_message('main()::under \'for data in datalist[\'list\']:\'', error))
 
-						for data in datalist['list']:
-							try:
-								parser = WeatherDataParser()
-								weatherData = parser.parse(data, is_kelvin_to_celcius=True)
-								weatherData.logger_id = logger_id
+					query_ids.clear()
+					k = 0
 
-								if not weatherData.is_exists():
-									if not weatherData.city_id or weatherData.city_id == -1:
-										print(error_message('main()::under \'for data in datalist[\'list\']:\'', f'Cannot download data of city openweather id: {openweather_ids[index]}. Skipped.'))
-										logMe.write(error_message('main()::under \'for data in datalist[\'list\']:\'', f'Cannot download data of city openweather id: {openweather_ids[index]}. Skipped.'))
-									else:
-										rows.append(weatherData.to_list())
+			try:
+				if len(rows) > 0:
+					weatherData.add_all(rows)
 
-							except Exception as error:
-								print(error_message('main()::under \'for data in datalist[\'list\']:\'', error))
-								logMe.write(error_message('main()::under \'for data in datalist[\'list\']:\'', error))
+					print(info_message('main()', f'{len(rows)} records successfull added to database.'))
+					logMe.write(info_message('main()', f'{len(rows)} records successfull added to database.'))
 
-						query_ids.clear()
-						k = 0
+			except Exception as mysql_error:
+				print(error_message('main()::under \'weatherData.add_all(rows)\'', error))
+				logMe.write(error_message('main()::under \'weatherData.add_all(rows)\'', error))
 
-				try:
-					if len(rows) > 0:
-						weatherData.add_all(rows)
+			end_time = datetime.now()
 
-						print(info_message('main()', f'{len(rows)} records successfull added to database.'))
-						logMe.write(info_message('main()', f'{len(rows)} records successfull added to database.'))
+			service_uptime = end_time - start_time
+			service_complete_log = f'Queries completed successfully in {service_uptime}'
 
-				except Exception as mysql_error:
-					print(error_message('main()::under \'weatherData.add_all(rows)\'', error))
-					logMe.write(error_message('main()::under \'weatherData.add_all(rows)\'', error))
-
-				end_time = datetime.now()
-
-				service_uptime = end_time - start_time
-				service_complete_log = f'Queries completed successfully in {service_uptime}'
-
-				print(info_message('main()', service_complete_log))
-				logMe.write(info_message('main()', service_complete_log))
+			print(info_message('main()', service_complete_log))
+			logMe.write(info_message('main()', service_complete_log))
 
 		except Exception as error:
 			print(error_message('main():: main block error', error))
@@ -307,10 +317,15 @@ def main():
 	db_parser.set_defaults(func=subparser_db_func)
 
 	city_parser = subparsers.add_parser('city', help='City Operations')
-	city_parser.add_argument('-s', '--search', nargs=2, action='store', help='"cityname" optional:"state" "countrycode"')
+	city_parser.add_argument('-s', '--search', nargs='+', action='store', help='"cityname" optional:"state" "countrycode"')
 	city_parser.add_argument('-o', '--openweather-id', nargs=2, action='store', help='Print OpenWeather id of selected city')
 	city_parser.add_argument('-l', '--last-weather', nargs=2, action='store', help='Print last weather data fetched from server')
 	city_parser.set_defaults(func=subparser_city_func)
+
+	country_parser = subparsers.add_parser('country', help='Country Operations')
+	country_parser.add_argument('-c', '--search-code', nargs=1, action='store', help='Enter country name')
+	country_parser.add_argument('-n', '--search-name', nargs=1, action='store', help='Enter country name')
+	country_parser.set_defaults(func=subparser_country_func)
 
 	query_parser = subparsers.add_parser('query', help='Server Queries')
 	query_parser.add_argument('-a', '--query-all', action='store_true', help='Fetch all last data from all cities from server')

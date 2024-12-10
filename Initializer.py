@@ -62,6 +62,7 @@ class Initializer:
 		self.config_wrapper.set('OpenWeather.Server', 'Url', 'https://api.openweathermap.org/data/2.5/weather?')
 		self.config_wrapper.set('OpenWeather.Resources.Json', 'CityList', os.path.join(self.cwd, 'resources', 'city.list.json'))
 		self.config_wrapper.set('OpenWeather.Resources.Json', 'CurrentCityList', os.path.join(self.cwd, 'resources', 'current.city.list.json'))
+		self.config_wrapper.set('OpenWeather.Resources.Csv', 'CountryCodes', os.path.join(self.cwd, 'resources', 'country_codes.csv'))
 		self.config_wrapper.set('Database', 'Created', 'False')
 		self.config_wrapper.set('Database', 'Enabled', 'False')
 		self.config_wrapper.set('Database.MySQL', 'Host', '')

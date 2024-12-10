@@ -166,17 +166,28 @@ class CityJson():
 	def get_matches(item, name: str, state: str | None, country_code: str):
 
 		city = None
-		if (name == item['name']) and (country_code == item['country']):
-			city = City()
-			city.openweather_id = item['id']
-			city.name = item['name']
-			city.country_code = item['country']
-			city.longitude = item['coord']['lon']
-			city.latitude = item['coord']['lat']
-			if state and (state == item['state']):
-				city.state = item['state']
+		if (name == item['name']) and (not state) and (not country_code):
+			CityJson.search_matches.append(CityJson._create_match(item))
 
-			CityJson.search_matches.append(city)
+		elif (name == item['name']) and (state and (state == item['state'])) and (country_code and (country_code == item['country'])):
+			CityJson.search_matches.append(CityJson._create_match(item))
+
+		elif (name == item['name']) and (country_code == item['country']) and (not state):
+			CityJson.search_matches.append(CityJson._create_match(item))
+
+	@staticmethod
+	def _create_match(item):
+
+		city = City()
+		city.openweather_id = item['id']
+		city.name = item['name']
+		if 'state' in item:
+			city.state = item['state']
+		city.country_code = item['country']
+		city.longitude = item['coord']['lon']
+		city.latitude = item['coord']['lat']
+
+		return city
 
 	@staticmethod
 	def get_openweather_id(item, name: str, state: str | None, country_code: str):
@@ -192,7 +203,7 @@ class CityJson():
 
 		CityJson.search_matches.clear()
 
-		city_list_json = CityJson.config_wrapper.get('OpenWeather.Resources.Json', 'CurrentCityList')
+		city_list_json = CityJson.config_wrapper.get('OpenWeather.Resources.Json', 'CityList')
 		IJsonFile.traverse(CityJson.get_matches, city_list_json, city, state, country_code)
 
 	@staticmethod
@@ -278,7 +289,7 @@ class CityCRUD():
 
 			sql = None
 			if not state:
-				sql = "SELECT id FROM city WHERE name = %s AND state is NULL AND country_code = %s"
+				sql = "SELECT id FROM city WHERE name = %s AND country_code = %s"
 				cur.execute(sql, (name, country_code, ))
 			else:
 				sql = "SELECT id FROM city WHERE name = %s AND state = %s AND country_code = %s"
