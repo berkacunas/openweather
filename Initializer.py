@@ -38,6 +38,7 @@ class Initializer:
 		self.config_wrapper.add_section('Flags')
 		self.config_wrapper.add_section('OpenWeather.Server')
 		self.config_wrapper.add_section('OpenWeather.Resources.Json')
+		self.config_wrapper.add_section('OpenWeather.Resources.Csv')
 		self.config_wrapper.add_section('Database')
 		self.config_wrapper.add_section('Database.MySQL')
 		self.config_wrapper.add_section('Data')
