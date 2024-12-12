@@ -72,9 +72,9 @@ class City():
 		self.openweather_id = None
 		self.state = None
   
-		self.crud = CityCRUD()
-		self.config_wrapper = ConfigParserWrapper()
-		self.logMe = LogMe()
+		self._crud = CityCRUD()
+		self._config_wrapper = ConfigParserWrapper()
+		self._logMe = LogMe()
 
 		self.weatherDatas = []
 
@@ -99,7 +99,7 @@ class City():
 		'''Copy other object to self object'''
 
 		try:
-			self.id = self.crud.select_id_by_openweather_id(other.openweather_id)
+			self.id = self._crud.select_id_by_openweather_id(other.openweather_id)
 			self.name = other.name
 			self.longitude = other.longitude
 			self.latitude = other.latitude
@@ -110,60 +110,72 @@ class City():
 
 		except Exception as error:
 			print(error_message('CityCRUD::copy()', error))
-			self.logMe.write(error_message('CityCRUD::copy()', error))
+			self._logMe.write(error_message('CityCRUD::copy()', error))
    
 		else:
 			print(info_message('CityCRUD::copy()', 'City selected.'))
-			self.logMe.write(info_message('CityCRUD::copy()', 'City selected.'))
+			self._logMe.write(info_message('CityCRUD::copy()', 'City selected.'))
 
 	def load(self, id):
 
-		self.copy(self.crud.select(id))
+		self.copy(self._crud.select(id))
 
 	def add(self):
 		
-		self.crud.insert(self)
+		self._crud.insert(self)
 
 	def remove(self):
 
-		self.crud.delete(self.id)
+		self._crud.delete(self.id)
 
 	def get_id_by_name(self, name: str, state: str | None, country_code: str) -> int:
 
-		return self.crud.select_id_by_name(name, state, country_code)
+		return self._crud.select_id_by_name(name, state, country_code)
 	
 	def get_name_by_id(self, id) -> str:
 
-		return self.crud.select_name_by_id(id)
+		return self._crud.select_name_by_id(id)
 
 	def get_all(self) -> list:
 
-		return self.crud.select_all()
+		return self._crud.select_all()
 
 	def get_all_names(self) -> list:
 
-		return self.crud.select_all_names()
+		return self._crud.select_all_names()
 
 	def get_all_openweather_ids(self) -> list:
 
-		return self.crud.select_all_openweather_ids()
+		return self._crud.select_all_openweather_ids()
 
 	def __str__(self):
+		
+		s = f'OpenWeather id: {self.openweather_id}, Name: {self.name}, '
+		if self.state and self.state != '':
+			s += f'State: {self.state} '
+		s+= f'Country: {self.country_code}, Longitude: {self.longitude}, Latitude: {self.latitude}'
 
-		return f'OpenWeather id: {self.openweather_id}, Name: {self.name}, Country: {self.country_code}, Longitude: {self.longitude}, Latitude: {self.latitude}'
+		return s
 	
 	def __repr__(self):
 
 		return f'City(\'{self.openweather_id}\', {self.name}, {self.country_code}, {self.longitude}, {self.latitude})'
 
+	def __iter__(self):
 
-class CityJson():
+		fields = ["id", "name", "longitude", "latitude", "country_code", "timezone", "openweather_id", "state"]
+		for key in self.__dict__:
+			if key in fields:
+				yield key, getattr(self, key)
+
+class CityJson:
 
 	config_wrapper = ConfigParserWrapper()
 	search_matches = []
+	city_list_json = config_wrapper.get('OpenWeather.Resources.Json', 'CityList')
 
 	@staticmethod
-	def get_matches(item, name: str, state: str | None, country_code: str):
+	def get_matches_proc(item, name: str, state: str | None, country_code: str | None):
 
 		city = None
 		if (name == item['name']) and (not state) and (not country_code):
@@ -174,6 +186,21 @@ class CityJson():
 
 		elif (name == item['name']) and (country_code == item['country']) and (not state):
 			CityJson.search_matches.append(CityJson._create_match(item))
+		
+	@staticmethod
+	def get_by_openweather_id_proc(item, openweather_id):
+
+		if openweather_id == item['id']:
+			CityJson.search_matches.append(CityJson._create_match(item))
+
+	@staticmethod
+	def get_openweather_id_proc(item, name: str, state: str | None, country_code: str):
+		
+		if (name == item['name']) and (country_code == item['country']):
+			if (state and (state == item['state'])) or ('state' in item):
+				print(f"OpenWeather id: {item['id']} City: {item['name']} State: {item['state']} Country: {item['country']}")
+				return
+			print(f"OpenWeather id: {item['id']} City: {item['name']} Country: {item['country']}")
 
 	@staticmethod
 	def _create_match(item):
@@ -188,34 +215,22 @@ class CityJson():
 		city.latitude = item['coord']['lat']
 
 		return city
-
-	@staticmethod
-	def get_openweather_id(item, name: str, state: str | None, country_code: str):
-		
-		if (name == item['name']) and (country_code == item['country']):
-			if state and (state == item['state']):
-				print(f"OpenWeather id: {item['id']} City: {item['name']} State: {item['state']} Country: {item['country']}")
-				return
-			print(f"OpenWeather id: {item['id']} City: {item['name']} State: {item['state']} Country: {item['country']}")
 				
 	@staticmethod
-	def find_in_openweather_json(city: str, state: str | None, country_code: str):
+	def find(city: str | None, state: str | None, country_code: str| None):
 
 		CityJson.search_matches.clear()
-
-		city_list_json = CityJson.config_wrapper.get('OpenWeather.Resources.Json', 'CityList')
-		IJsonFile.traverse(CityJson.get_matches, city_list_json, city, state, country_code)
+		IJsonFile.traverse(CityJson.get_matches_proc, CityJson.city_list_json, city, state, country_code)
 
 	@staticmethod
 	def find_openweather_id(city: str, state: str | None, country_code: str):
 
-		city_list_json = CityJson.config_wrapper.get('OpenWeather.Resources.Json', 'CurrentCityList')
-		IJsonFile.traverse(CityJson.get_openweather_id, city_list_json, city, state, country_code)
+		IJsonFile.traverse(CityJson.get_openweather_id_proc, CityJson.city_list_json, city, state, country_code)
 
-	def add_in_user_json(self):
+	@staticmethod
+	def find_by_openweather_id(openweather_id: int):
 
-		raise NotImplementedError('Not implemented yet.')
-
+		IJsonFile.traverse(CityJson.get_by_openweather_id_proc, CityJson.city_list_json, openweather_id)
 
 
 class CityCRUD():
@@ -223,7 +238,7 @@ class CityCRUD():
 	def __init__(self):
 		
 		self.dbConn = DBConnection()
-		self.logMe = LogMe()
+		self._logMe = LogMe()
 		
 	@staticmethod
 	def load_tuple(item) -> City:
@@ -267,13 +282,13 @@ class CityCRUD():
 				city = CityCRUD.load_tuple(row)
 	
 				print(info_message('CityCRUD::select()', 'City selected.'))
-				self.logMe.write(info_message('CityCRUD::select()', 'City selected.'))
+				self._logMe.write(info_message('CityCRUD::select()', 'City selected.'))
 	
 			return city
 
 		except Exception as error:
 			print(error_message('CityCRUD::select()', error))
-			self.logMe.write(error_message('CityCRUD::select()', error))
+			self._logMe.write(error_message('CityCRUD::select()', error))
 		
 		finally:
 			if conn:
@@ -299,7 +314,7 @@ class CityCRUD():
 
 			if row:
 				print(info_message('CityCRUD::select_id_by_name()', 'City id is got.'))
-				self.logMe.write(info_message('CityCRUD::select_id_by_name()', 'City id is got.'))
+				self._logMe.write(info_message('CityCRUD::select_id_by_name()', 'City id is got.'))
    
 				return int(row[0])
 
@@ -307,7 +322,7 @@ class CityCRUD():
 			
 		except Exception as error:
 			print(error_message('CityCRUD::select_id_by_name()', error))
-			self.logMe.write(error_message('CityCRUD::select_id_by_name()', error))
+			self._logMe.write(error_message('CityCRUD::select_id_by_name()', error))
 		
 		finally:
 			if conn:
@@ -324,7 +339,7 @@ class CityCRUD():
 			row = cur.fetchone()
 
 			print(info_message('CityCRUD::select_name_by_id()', 'City name is got.'))
-			self.logMe.write(info_message('CityCRUD::select_name_by_id()', 'City name is got.'))
+			self._logMe.write(info_message('CityCRUD::select_name_by_id()', 'City name is got.'))
 
 			if row:
 				return str(row[0])
@@ -333,7 +348,7 @@ class CityCRUD():
 			
 		except Exception as error:
 			print(error_message('CityCRUD::select_name_by_id()', error))
-			self.logMe.write(error_message('CityCRUD::select_name_by_id()', error))
+			self._logMe.write(error_message('CityCRUD::select_name_by_id()', error))
 		
 		finally:
 			if conn:
@@ -358,13 +373,13 @@ class CityCRUD():
 					cities.append(city)
 	 
 				print(info_message('CityCRUD::select_all()', 'All cities are got.'))
-				self.logMe.write(info_message('CityCRUD::select_all()', 'All cities are got.'))
+				self._logMe.write(info_message('CityCRUD::select_all()', 'All cities are got.'))
 
 			return cities
 			
 		except Exception as error:
 			print(error_message('CityCRUD::select_all()', error))
-			self.logMe.write(error_message('CityCRUD::select_all()', error))
+			self._logMe.write(error_message('CityCRUD::select_all()', error))
 		
 		finally:
 			if conn:
@@ -390,13 +405,13 @@ class CityCRUD():
 			conn.commit()
    
 			print(info_message('CityCRUD::select_all_names()', 'All city names are got.'))
-			self.logMe.write(info_message('CityCRUD::select_all_names()', 'All city names are got.'))
+			self._logMe.write(info_message('CityCRUD::select_all_names()', 'All city names are got.'))
 
 			return cities
 		
 		except Exception as error:
 			print(error_message('CityCRUD::select_all_names()', error))
-			self.logMe.write(error_message('CityCRUD::select_all_names()', error))
+			self._logMe.write(error_message('CityCRUD::select_all_names()', error))
 			
 		finally:
 			if conn:
@@ -419,7 +434,7 @@ class CityCRUD():
 					openweather_ids.append(row[0])
 
 				print(info_message('CityCRUD::select_all_openweather_ids()', 'All city openweather ids are got.'))
-				self.logMe.write(info_message('CityCRUD::select_all_openweather_ids()', 'All city openweather ids are got.'))
+				self._logMe.write(info_message('CityCRUD::select_all_openweather_ids()', 'All city openweather ids are got.'))
 
 			curr.close()
 			conn.commit()
@@ -428,7 +443,7 @@ class CityCRUD():
 
 		except Exception as error:
 			print(error_message('CityCRUD::select_all_openweather_ids()', error))
-			self.logMe.write(error_message('CityCRUD::select_all_openweather_ids()', error))
+			self._logMe.write(error_message('CityCRUD::select_all_openweather_ids()', error))
 
 		finally:
 			if conn:
@@ -452,11 +467,11 @@ class CityCRUD():
 			
 		except Exception as error:
 			print(error_message('CityCRUD::insert()', error))
-			self.logMe.write(error_message('CityCRUD::insert()', error))
+			self._logMe.write(error_message('CityCRUD::insert()', error))
    
 		else:
 			print(info_message('CityCRUD::insert()', 'City inserted.'))
-			self.logMe.write(info_message('CityCRUD::insert()', 'City inserted.'))
+			self._logMe.write(info_message('CityCRUD::insert()', 'City inserted.'))
 		
 		finally:
 			if conn:
@@ -482,11 +497,11 @@ class CityCRUD():
 			
 		except Exception as error:
 			print(error_message('CityCRUD::update()', error))
-			self.logMe.write(error_message('CityCRUD::update()', error))
+			self._logMe.write(error_message('CityCRUD::update()', error))
    
 		else:
 			print(info_message('CityCRUD::update()', 'City updated.'))
-			self.logMe.write(info_message('CityCRUD::update()', 'City updated.'))
+			self._logMe.write(info_message('CityCRUD::update()', 'City updated.'))
 		
 		finally:
 			if conn:
@@ -510,11 +525,11 @@ class CityCRUD():
 			
 		except Exception as error:
 			print(error_message('CityCRUD::delete()', error))
-			self.logMe.write(error_message('CityCRUD::delete()', error))
+			self._logMe.write(error_message('CityCRUD::delete()', error))
    
 		else:
 			print(info_message('CityCRUD::delete()', 'City deleted.'))
-			self.logMe.write(info_message('CityCRUD::delete()', 'City deleted.'))
+			self._logMe.write(info_message('CityCRUD::delete()', 'City deleted.'))
 		
 		finally:
 			if conn:
@@ -534,7 +549,7 @@ class CityCRUD():
    
 			if row:
 				print(info_message('CityCRUD::is_exists()', 'Is city exists checked.'))
-				self.logMe.write(info_message('CityCRUD::is_exists()', 'Is city exists checked.'))
+				self._logMe.write(info_message('CityCRUD::is_exists()', 'Is city exists checked.'))
 
 				return int(row[0]) > 0
 
@@ -542,7 +557,7 @@ class CityCRUD():
 			
 		except Exception as error:
 			print(error_message('CityCRUD::is_exists()', error))
-			self.logMe.write(error_message('CityCRUD::is_exists()', error))
+			self._logMe.write(error_message('CityCRUD::is_exists()', error))
    
 		finally:
 			if conn:
@@ -562,7 +577,7 @@ class CityCRUD():
    
 			if row:
 				print(info_message('CityCRUD::select_country_by_country_code()', 'Country name is got by country code.'))
-				self.logMe.write(info_message('CityCRUD::select_country_by_country_code()', 'Country name is got by country code.'))
+				self._logMe.write(info_message('CityCRUD::select_country_by_country_code()', 'Country name is got by country code.'))
 
 				return str(row[0])
 
@@ -570,7 +585,7 @@ class CityCRUD():
 				
 		except Exception as error:
 			print(error_message('CityCRUD::select_country_by_country_code()', error))
-			self.logMe.write(error_message('CityCRUD::select_country_by_country_code()', error))
+			self._logMe.write(error_message('CityCRUD::select_country_by_country_code()', error))
 		
 		finally:
 			if conn:
@@ -592,13 +607,13 @@ class CityCRUD():
 					countryDict[row[1]] = row[0]
 				
 				print(info_message('CityCRUD::select_countries()', 'All countries are got into a dictionary.'))
-				self.logMe.write(info_message('CityCRUD::select_countries()', 'All countries are got into a dictionary.'))
+				self._logMe.write(info_message('CityCRUD::select_countries()', 'All countries are got into a dictionary.'))
    
 			return countryDict
 				
 		except Exception as error:
 			print(error_message('CityCRUD::select_countries()', error))
-			self.logMe.write(error_message('CityCRUD::select_countries()', error))
+			self._logMe.write(error_message('CityCRUD::select_countries()', error))
 		
 		finally:
 			if conn:
@@ -618,7 +633,7 @@ class CityCRUD():
 
 			if row:
 				print(info_message('CityCRUD::select_timezone()', 'City timezone is got.'))
-				self.logMe.write(info_message('CityCRUD::select_timezone()', 'City timezone is got.'))
+				self._logMe.write(info_message('CityCRUD::select_timezone()', 'City timezone is got.'))
 	   
 				timezone = int(row[0])
 				timezone = timezone / 3600
@@ -628,7 +643,7 @@ class CityCRUD():
 				
 		except Exception as error:
 			print(error_message('CityCRUD::select_timezone()', error))
-			self.logMe.write(error_message('CityCRUD::select_timezone()', error))
+			self._logMe.write(error_message('CityCRUD::select_timezone()', error))
 		
 		finally:
 			if conn:
@@ -656,11 +671,11 @@ class CityCRUD():
 				
 		except Exception as error:
 			print(error_message('CityCRUD::insert_timezone_if_not_exists()', error))
-			self.logMe.write(error_message('CityCRUD::insert_timezone_if_not_exists()', error))
+			self._logMe.write(error_message('CityCRUD::insert_timezone_if_not_exists()', error))
    
 		else:
 			print(info_message('CityCRUD::insert_timezone_if_not_exists()', 'Timezone is inserted if not exists before.'))
-			self.logMe.write(info_message('CityCRUD::insert_timezone_if_not_exists()', 'Timezone is inserted if not exists before.'))
+			self._logMe.write(info_message('CityCRUD::insert_timezone_if_not_exists()', 'Timezone is inserted if not exists before.'))
 	  
 		finally:
 			if conn:
@@ -679,7 +694,7 @@ class CityCRUD():
 
 			if row:
 				print(info_message('CityCRUD::select_id_by_openweather_id()', 'City id is got by openweather id.'))
-				self.logMe.write(info_message('CityCRUD::select_id_by_openweather_id()', 'City id is got by openweather id.'))
+				self._logMe.write(info_message('CityCRUD::select_id_by_openweather_id()', 'City id is got by openweather id.'))
 
 				return str(row[0])
 
@@ -687,7 +702,7 @@ class CityCRUD():
 
 		except Exception as error:
 			print(error_message('CityCRUD::select_id_by_openweather_id()', error))
-			self.logMe.write(error_message('CityCRUD::select_id_by_openweather_id()', error))
+			self._logMe.write(error_message('CityCRUD::select_id_by_openweather_id()', error))
 
 		finally:
 			if conn:
@@ -705,13 +720,13 @@ class CityCRUD():
 
 			if row:
 				print(info_message('CityCRUD::select_openweather_id_by_id()', 'City openweather id is got by id.'))
-				self.logMe.write(info_message('CityCRUD::select_openweather_id_by_id()', 'City openweather id is got by id.'))
+				self._logMe.write(info_message('CityCRUD::select_openweather_id_by_id()', 'City openweather id is got by id.'))
 
 			return str(row[0])
 
 		except Exception as error:
 			print(error_message('CityCRUD::select_openweather_id_by_id()', error))
-			self.logMe.write(error_message('CityCRUD::select_openweather_id_by_id()', error))
+			self._logMe.write(error_message('CityCRUD::select_openweather_id_by_id()', error))
 
 		finally:
 			if conn:
@@ -729,7 +744,7 @@ class CityCRUD():
 
 			if row:
 				print(info_message('CityCRUD::select_openweather_id_by_name()', 'openweather id is got.'))
-				self.logMe.write(info_message('CityCRUD::select_openweather_id_by_name()', 'openweather id is got.'))
+				self._logMe.write(info_message('CityCRUD::select_openweather_id_by_name()', 'openweather id is got.'))
 
 				return int(row[0])
 
@@ -737,7 +752,7 @@ class CityCRUD():
 			
 		except Exception as error:
 			print(error_message('CityCRUD::select_openweather_id_by_name()', error))
-			self.logMe.write(error_message('CityCRUD::select_openweather_id_by_name()', error))
+			self._logMe.write(error_message('CityCRUD::select_openweather_id_by_name()', error))
 		
 		finally:
 			if conn:
@@ -758,11 +773,11 @@ class CityCRUD():
 			
 		except Exception as error:
 			print(error_message('CityCRUD::update_openweather_id_by_id()', error))
-			self.logMe.write(error_message('CityCRUD::update_openweather_id_by_id()', error))
+			self._logMe.write(error_message('CityCRUD::update_openweather_id_by_id()', error))
 		
 		else:
 			print(info_message('CityCRUD::update_openweather_id_by_id()', 'openweather id is updated.'))
-			self.logMe.write(info_message('CityCRUD::update_openweather_id_by_id()', 'openweather id is updated.'))
+			self._logMe.write(info_message('CityCRUD::update_openweather_id_by_id()', 'openweather id is updated.'))
   
 		finally:
 			if conn:

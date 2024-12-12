@@ -22,6 +22,7 @@ from WeatherData import WeatherData
 from WeatherDataParser import WeatherDataParser
 from City import City, CityJson
 from CountryCode import CountryCode
+from UserData import UserData
 from MySQLConnection import DbOptions
 from LogMe import LogMe, info_message, error_message
 
@@ -45,6 +46,7 @@ def _extract_city_data(args):
 
 	if count == 3:
 		state = args[1]
+		country_code = args[2]
 	if count == 2:
 		country_code = args[1]
   
@@ -138,7 +140,7 @@ def subparser_city_func(args):
 	if args.search:
 
 		city_name, state, country_code = _extract_city_data(args.search)
-		CityJson.find_in_openweather_json(city_name, state, country_code)
+		CityJson.find(city_name, state, country_code)
 		
 		for match in CityJson.search_matches:
 			print(match)
@@ -147,6 +149,16 @@ def subparser_city_func(args):
 
 		city_name, state, country_code = _extract_city_data(args.openweather_id)
 		CityJson.find_openweather_id(city_name, state, country_code)
+
+	if args.add:
+
+		openweather_id = int(args.add[0])
+		CityJson.find_by_openweather_id(openweather_id)
+		
+		userData = UserData()
+		if not str(openweather_id) in userData.data:
+			userData.data[openweather_id] = dict(CityJson.search_matches[0])
+			userData.save()
 
 	if args.last_weather:
 
@@ -317,8 +329,11 @@ def main():
 	db_parser.set_defaults(func=subparser_db_func)
 
 	city_parser = subparsers.add_parser('city', help='City Operations')
+	# Search Operations
 	city_parser.add_argument('-s', '--search', nargs='+', action='store', help='"cityname" optional:"state" "countrycode"')
 	city_parser.add_argument('-o', '--openweather-id', nargs=2, action='store', help='Print OpenWeather id of selected city')
+	city_parser.add_argument('-a', '--add', nargs='+', action='store', help='Add city by its openweather id')
+	# Display Operations
 	city_parser.add_argument('-l', '--last-weather', nargs=2, action='store', help='Print last weather data fetched from server')
 	city_parser.set_defaults(func=subparser_city_func)
 

@@ -73,6 +73,7 @@ class Initializer:
 		self.config_wrapper.set('Database.MySQL', 'Port', '')
 		self.config_wrapper.set('Data', 'ApiKey', '')
 		self.config_wrapper.set('Data', 'CityConflictsJsonFile', os.path.join(self.cwd, 'data', 'CityNameConflicts.json'))
+		self.config_wrapper.set('Data', 'UserDataFile', os.path.join(self.cwd, 'data', 'userdata.json'))
 		self.config_wrapper.set('Settings', 'MaxGroupQueryLimit', '20')
 		self.config_wrapper.set('Settings', 'UserTimezone', str(self.get_timezone_diff()))
 		self.config_wrapper.set('Units', 'KelvinToCelcius', '273.15')
@@ -98,7 +99,7 @@ class Initializer:
 		self.csv_on = self.config_wrapper.getboolean('Flags', 'CsvOn')
 		self.json_on = self.config_wrapper.getboolean('Flags', 'JsonOn')
 		self.log_on = self.config_wrapper.getboolean('Flags', 'LogOn')
-
+		
 		self.create_backup_dir_if_not_exists()
 		self.create_log_dir_if_not_exists()
 		self.create_csv_dir_if_not_exists()

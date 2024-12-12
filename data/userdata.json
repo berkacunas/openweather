@@ -1,0 +1,22 @@
+{
+    "745044": {
+        "id": null,
+        "name": "Istanbul",
+        "longitude": "28.949659",
+        "latitude": "41.01384",
+        "country_code": "TR",
+        "timezone": null,
+        "openweather_id": 745044,
+        "state": ""
+    },
+    "5101760": {
+        "id": null,
+        "name": "New Jersey",
+        "longitude": "-74.49987",
+        "latitude": "40.167061",
+        "country_code": "US",
+        "timezone": null,
+        "openweather_id": 5101760,
+        "state": "NJ"
+    }
+}
