@@ -38,6 +38,8 @@ from datetime import datetime
 from MySQLConnection import DBConnection
 from LogMe import LogMe, info_message, error_message
 from OpenWeatherException import TupleLoadingError
+from ConfigParserWrapper import ConfigParserWrapper
+from JsonFile import JsonFile
 
 
 class WeatherData:
@@ -466,3 +468,20 @@ class WeatherDataCRUD:
 		finally:
 			if conn:
 				conn.close()
+
+class UserDataJson:
+
+	def __init__(self):
+
+		self.data = {}
+
+		self.config_wrapper = ConfigParserWrapper()
+		self.userdata_json_path = self.config_wrapper.get('Data', 'UserDataFile')
+
+	def load(self):
+
+		self.data = JsonFile.load(self.userdata_json_path)
+
+	def save(self):
+
+		JsonFile.save(self.userdata_json_path, self.data)

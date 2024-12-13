@@ -20,9 +20,8 @@ from OpenWeatherLogger import OpenWeatherLogger
 from OpenWeatherException import ApiKeyNotFoundError
 from WeatherData import WeatherData
 from WeatherDataParser import WeatherDataParser
-from City import City, CityJson
+from City import City, CityJson, UserCityJson
 from CountryCode import CountryCode
-from UserData import UserData
 from MySQLConnection import DbOptions
 from LogMe import LogMe, info_message, error_message
 
@@ -155,10 +154,10 @@ def subparser_city_func(args):
 		openweather_id = int(args.add[0])
 		CityJson.find_by_openweather_id(openweather_id)
 		
-		userData = UserData()
-		if not str(openweather_id) in userData.data:
-			userData.data[openweather_id] = dict(CityJson.search_matches[0])
-			userData.save()
+		user_city = UserCityJson()
+		if not str(openweather_id) in user_city.data:
+			user_city.data[openweather_id] = dict(CityJson.search_matches[0])
+			user_city.save()
 
 	if args.last_weather:
 

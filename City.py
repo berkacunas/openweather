@@ -52,8 +52,9 @@
 #																													#
 #####################################################################################################################
 
+import os
 from WeatherData import WeatherData
-from JsonFile import IJsonFile
+from JsonFile import JsonFile, IJsonFile, decimal_serializer
 from MySQLConnection import DBConnection
 from LogMe import LogMe, info_message, error_message
 from ConfigParserWrapper import ConfigParserWrapper
@@ -232,6 +233,25 @@ class CityJson:
 
 		IJsonFile.traverse(CityJson.get_by_openweather_id_proc, CityJson.city_list_json, openweather_id)
 
+class UserCityJson:
+
+	def __init__(self):
+
+		self.data = {}
+
+		self.config_wrapper = ConfigParserWrapper()
+		self.usercity_json_path = self.config_wrapper.get('Data', 'UserCityFile')
+		self.load()
+
+	def load(self):
+
+		self.data = JsonFile.load(self.usercity_json_path)
+
+	def save(self):
+
+		JsonFile.save(self.usercity_json_path, self.data, decimal_serializer)
+
+	
 
 class CityCRUD():
 

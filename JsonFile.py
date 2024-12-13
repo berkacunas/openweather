@@ -2,10 +2,18 @@ import os
 import json
 import ijson
 from datetime import datetime
+from decimal import Decimal
 
 from ConfigParserWrapper import ConfigParserWrapper
 from OpenWeatherException import CityNotFoundError
 from LogMe import LogMe, info_message, error_message, frame_info, print_frame_info
+
+def decimal_serializer(obj):
+
+	if isinstance(obj, Decimal):
+		return str(obj)
+	
+	raise TypeError('Type is not serializable')
 
 # class JsonFile:
 
@@ -188,6 +196,36 @@ from LogMe import LogMe, info_message, error_message, frame_info, print_frame_in
 # 			self.datarows = []
 
 # 		self.datarows.append([city.name, city.longitude, city.latitude, city.country_code, city.timezone, city.openweather_id, city.state])
+
+
+class JsonFile:
+
+	
+
+	@staticmethod
+	def load(path) -> dict:
+
+		if not os.path.exists(path):
+			JsonFile.create(path)
+
+		with open(path, 'r', encoding='UTF-8') as f:
+			return json.load(f)
+		
+		return None
+	
+	@staticmethod 
+	def create(path):
+
+		data = {}
+		JsonFile.save(path, data)
+
+	@staticmethod
+	def save(path, data, serializer=None):
+
+		# Serialize dictionary into an object.
+		json_object = json.dumps(data, indent=4, default=serializer)
+		with open(path, 'w', encoding='UTF-8') as f:
+			f.write(json_object)
 
 class IJsonFile:
 
