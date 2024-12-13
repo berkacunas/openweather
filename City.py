@@ -260,7 +260,7 @@ class UserCityJson:
 		for key, value in self.data.items():
 			s += f'{key}: => '
 			for k, v in value.items():
-				if v is '':
+				if v == '':
 					v = None
 				s += f'{k}: {v}  '
 			s += '\n'
