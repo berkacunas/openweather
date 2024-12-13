@@ -19,14 +19,14 @@
         "openweather_id": 5101760,
         "state": "NJ"
     },
-    "323784": {
+    "311044": {
         "id": null,
-        "name": "Ankara",
-        "longitude": "32.833328",
-        "latitude": "39.916672",
+        "name": "\u0130zmir",
+        "longitude": "27.092291",
+        "latitude": "38.462189",
         "country_code": "TR",
         "timezone": null,
-        "openweather_id": 323784,
+        "openweather_id": 311044,
         "state": ""
     }
 }

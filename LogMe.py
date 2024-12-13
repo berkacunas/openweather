@@ -67,6 +67,7 @@ class LogMe:
 		self.filename = f'{datetime.now().strftime("%Y.%m.%d")}_openweather.log'	# %Y.%m.%d %H%M%S
 		self.logfile = os.path.join(self.log_dir, self.filename)
 
+
 	def write(self, message):
 
 		try:

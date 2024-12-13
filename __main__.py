@@ -26,6 +26,8 @@ from MySQLConnection import DbOptions
 from LogMe import LogMe, info_message, error_message
 
 # Global variables, definitions
+logMe = LogMe()
+
 cwd = os.getcwd()
 init_dir = os.path.join(cwd, '.init')
 
@@ -159,6 +161,19 @@ def subparser_city_func(args):
 			user_city.data[openweather_id] = dict(CityJson.search_matches[0])
 			user_city.save()
 
+	if args.remove:
+		openweather_id = int(args.remove[0])
+
+		user_city = UserCityJson()
+		if str(openweather_id) in user_city.data:
+			user_city.data.pop(str(openweather_id))
+			user_city.save()
+
+	if args.list:
+		user_city = UserCityJson()
+		print(user_city)
+
+
 	if args.last_weather:
 
 		city_name, state, country_code = _extract_city_data(args.last_weather)
@@ -192,9 +207,9 @@ def subparser_query_func(args):
 		print('Api Key not found! Please register your Api Key.\ne.g. $ openweather apikey --newvalue yourapikey')
 		return
  
-	if args.now:
+	if args.city:
 
-		city_name, state, country_code = _extract_city_data(args.now)
+		city_name, state, country_code = _extract_city_data(args.city)
   
 		try:
 			data = owc.get_single_openweatherdata(city_name, state, country_code).json
@@ -296,10 +311,6 @@ def subparser_query_func(args):
 
 def main():
 
-	global logMe
-
-	logMe = LogMe()
-
 	global_parser = argparse.ArgumentParser(prog='openweather', 
 											description='OpenWeather Server and Data Management Module',
 										 epilog='Thanks for using %(prog)s!')
@@ -328,12 +339,12 @@ def main():
 	db_parser.set_defaults(func=subparser_db_func)
 
 	city_parser = subparsers.add_parser('city', help='City Operations')
-	# Search Operations
 	city_parser.add_argument('-s', '--search', nargs='+', action='store', help='"cityname" optional:"state" "countrycode"')
 	city_parser.add_argument('-o', '--openweather-id', nargs=2, action='store', help='Print OpenWeather id of selected city')
-	city_parser.add_argument('-a', '--add', nargs='+', action='store', help='Add city by its openweather id')
-	# Display Operations
-	city_parser.add_argument('-l', '--last-weather', nargs=2, action='store', help='Print last weather data fetched from server')
+	city_parser.add_argument('-a', '--add', nargs=1, action='store', help='Add city by its openweather id')
+	city_parser.add_argument('-r', '--remove', nargs=1, action='store', help='Remove city by its openweather id')
+	city_parser.add_argument('-l', '--list', action='store_true', help='List cities')
+	city_parser.add_argument('-w', '--last-weather', nargs=2, action='store', help='Print last fetched observation data from database')
 	city_parser.set_defaults(func=subparser_city_func)
 
 	country_parser = subparsers.add_parser('country', help='Country Operations')
@@ -343,7 +354,7 @@ def main():
 
 	query_parser = subparsers.add_parser('query', help='Server Queries')
 	query_parser.add_argument('-a', '--query-all', action='store_true', help='Fetch all last data from all cities from server')
-	query_parser.add_argument('-n', '--now', nargs=2, action='store', help='Fetch current data from server for selected city')
+	query_parser.add_argument('-c', '--city', nargs='+', action='store', help='Fetch current data from server for selected city')
 	query_parser.set_defaults(func=subparser_query_func)
 
 	try:

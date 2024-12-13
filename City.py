@@ -173,8 +173,7 @@ class CityJson:
 
 	config_wrapper = ConfigParserWrapper()
 	search_matches = []
-	city_list_json = config_wrapper.get('OpenWeather.Resources.Json', 'CityList')
-
+	
 	@staticmethod
 	def get_matches_proc(item, name: str, state: str | None, country_code: str | None):
 
@@ -220,18 +219,22 @@ class CityJson:
 	@staticmethod
 	def find(city: str | None, state: str | None, country_code: str| None):
 
+		city_list_json = CityJson.config_wrapper.get('OpenWeather.Resources.Json', 'CityList')
+
 		CityJson.search_matches.clear()
-		IJsonFile.traverse(CityJson.get_matches_proc, CityJson.city_list_json, city, state, country_code)
+		IJsonFile.traverse(CityJson.get_matches_proc, city_list_json, city, state, country_code)
 
 	@staticmethod
 	def find_openweather_id(city: str, state: str | None, country_code: str):
 
-		IJsonFile.traverse(CityJson.get_openweather_id_proc, CityJson.city_list_json, city, state, country_code)
+		city_list_json = CityJson.config_wrapper.get('OpenWeather.Resources.Json', 'CityList')
+		IJsonFile.traverse(CityJson.get_openweather_id_proc, city_list_json, city, state, country_code)
 
 	@staticmethod
 	def find_by_openweather_id(openweather_id: int):
 
-		IJsonFile.traverse(CityJson.get_by_openweather_id_proc, CityJson.city_list_json, openweather_id)
+		city_list_json = CityJson.config_wrapper.get('OpenWeather.Resources.Json', 'CityList')
+		IJsonFile.traverse(CityJson.get_by_openweather_id_proc, city_list_json, openweather_id)
 
 class UserCityJson:
 
@@ -251,6 +254,18 @@ class UserCityJson:
 
 		JsonFile.save(self.usercity_json_path, self.data, decimal_serializer)
 
+	def __str__(self):
+		
+		s = ''
+		for key, value in self.data.items():
+			s += f'{key}: => '
+			for k, v in value.items():
+				if v is '':
+					v = None
+				s += f'{k}: {v}  '
+			s += '\n'
+
+		return s
 	
 
 class CityCRUD():
